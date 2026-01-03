@@ -455,7 +455,7 @@ export const TemplatePreview = React.memo(({
                                         key={currentImageUrl}
                                         src={currentImageUrl} 
                                         referrerPolicy="no-referrer"
-                                        alt="Template Preview" 
+                                        alt={getLocalized(activeTemplate.name, language) || "Template Preview"} 
                                         className="w-full md:w-auto md:max-w-[400px] md:max-h-[400px] h-auto object-contain block animate-in fade-in duration-300" 
                                         onError={(e) => {
                                             e.target.style.display = 'none';

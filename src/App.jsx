@@ -128,6 +128,7 @@ const App = () => {
   
   // Template Tag Management State
   const [selectedTags, setSelectedTags] = useState("");
+  const [selectedLibrary, setSelectedLibrary] = useState("all"); // all, official, personal
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTemplateTags, setEditingTemplateTags] = useState(null); // {id, tags}
   const [isDiscoveryView, setDiscoveryView] = useState(true); // 首次加载默认显示发现（海报）视图
@@ -973,9 +974,16 @@ const App = () => {
       // Tag filter
       const matchesTags = selectedTags === "" || 
         (t.tags && t.tags.includes(selectedTags));
-      return matchesTags;
+      
+      // Library filter
+      const isOfficial = INITIAL_TEMPLATES_CONFIG.some(cfg => cfg.id === t.id);
+      const matchesLibrary = selectedLibrary === "all" || 
+        (selectedLibrary === "official" && isOfficial) ||
+        (selectedLibrary === "personal" && !isOfficial);
+
+      return matchesTags && matchesLibrary;
     });
-  }, [discoveryTemplates, selectedTags]);
+  }, [discoveryTemplates, selectedTags, selectedLibrary]);
 
   const fileInputRef = useRef(null);
   
@@ -2203,7 +2211,7 @@ const App = () => {
           />
         ) : showDiscoveryOverlay ? (
           <DiscoveryView
-            filteredTemplates={discoveryTemplates}
+            filteredTemplates={filteredTemplates}
             setActiveTemplateId={setActiveTemplateId}
             setDiscoveryView={handleSetDiscoveryView}
             setZoomedImage={setZoomedImage}
@@ -2230,6 +2238,11 @@ const App = () => {
             themeMode={themeMode}
             setThemeMode={setThemeMode}
             templates={templates}
+            selectedTags={selectedTags}
+            setSelectedTags={setSelectedTags}
+            selectedLibrary={selectedLibrary}
+            setSelectedLibrary={setSelectedLibrary}
+            TEMPLATE_TAGS={TEMPLATE_TAGS}
           />
         ) : (
           <div className="flex-1 flex gap-2 lg:gap-4 overflow-hidden">
@@ -2312,10 +2325,10 @@ const App = () => {
               
               {/* 顶部工具栏 */}
               {(!isMobileDevice || mobileTab !== 'settings') && (
-                <div className={`px-4 md:px-8 py-3 md:py-4 border-b flex flex-col md:flex-row md:justify-between md:items-center z-20 h-auto ${isDarkMode ? 'border-white/5' : 'border-gray-100/50'}`}>
-                  {/* 第一行：语言切换与模式切换 (Mobile) / 标题与语言 (Desktop) */}
-                  <div className="w-full md:w-auto flex justify-between items-center">
-                    <div className="flex items-center gap-3">
+                <div className={`px-4 md:px-8 py-3 md:py-4 border-b flex flex-col gap-3 z-20 h-auto ${isDarkMode ? 'border-white/5' : 'border-gray-100/50'}`}>
+                  {/* 第一行：标题、语言切换与模式切换 */}
+                  <div className="w-full flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 overflow-hidden">
                       {/* Language Toggle - Mobile: Left of Title */}
                       {isMobileDevice && activeTemplate && (() => {
                         const templateLangs = activeTemplate.language ? (Array.isArray(activeTemplate.language) ? activeTemplate.language : [activeTemplate.language]) : ['cn', 'en'];
@@ -2388,84 +2401,57 @@ const App = () => {
                       })()}
                     </div>
 
-                    {/* 模式切换 (Mobile Only) */}
-                    <div className="md:hidden">
-                      <div className={`premium-toggle-container ${isDarkMode ? 'dark' : 'light'}`}>
-                          <button
-                              onClick={handleStopEditing}
-                              className={`premium-toggle-item ${isDarkMode ? 'dark' : 'light'} ${!isEditing ? 'is-active' : ''}`}
-                              title={t('preview_mode')}
-                          >
-                              <Eye size={14} /> <span className="text-[11px] ml-1">{t('preview_mode')}</span>
-                          </button>
-                          <button
-                              onClick={handleStartEditing}
-                              className={`premium-toggle-item ${isDarkMode ? 'dark' : 'light'} ${isEditing ? 'is-active' : ''}`}
-                              title={t('edit_mode')}
-                          >
-                              <Edit3 size={14} /> <span className="text-[11px] ml-1">{t('edit_mode')}</span>
-                          </button>
-                      </div>
+                    {/* 模式切换 */}
+                    <div className={`premium-toggle-container ${isDarkMode ? 'dark' : 'light'} shrink-0`}>
+                        <button
+                            onClick={handleStopEditing}
+                            className={`premium-toggle-item ${isDarkMode ? 'dark' : 'light'} ${!isEditing ? 'is-active' : ''}`}
+                            title={t('preview_mode')}
+                        >
+                            <Eye size={14} /> <span className="hidden md:inline ml-1.5">{t('preview_mode')}</span>
+                        </button>
+                        <button
+                            onClick={handleStartEditing}
+                            className={`premium-toggle-item ${isDarkMode ? 'dark' : 'light'} ${isEditing ? 'is-active' : ''}`}
+                            title={t('edit_mode')}
+                        >
+                            <Edit3 size={14} /> <span className="hidden md:inline ml-1.5">{t('edit_mode')}</span>
+                        </button>
                     </div>
                   </div>
                   
-                  {/* 第二行：分享、保存、复制 (Mobile) / 模式切换与按钮 (Desktop) */}
-                  <div className="w-full md:w-auto flex items-center justify-between md:justify-end gap-2 shrink-0 mt-2 md:mt-0">
-                     {/* 模式切换 (Desktop Only) */}
-                     {!isMobileDevice && (
-                        <>
-                          <div className={`premium-toggle-container ${isDarkMode ? 'dark' : 'light'}`}>
-                              <button
-                                  onClick={handleStopEditing}
-                                  className={`premium-toggle-item ${isDarkMode ? 'dark' : 'light'} ${!isEditing ? 'is-active' : ''}`}
-                                  title={t('preview_mode')}
-                              >
-                                  <Eye size={14} /> <span className="hidden md:inline">{t('preview_mode')}</span>
-                              </button>
-                              <button
-                                  onClick={handleStartEditing}
-                                  className={`premium-toggle-item ${isDarkMode ? 'dark' : 'light'} ${isEditing ? 'is-active' : ''}`}
-                                  title={t('edit_mode')}
-                              >
-                                  <Edit3 size={14} /> <span className="hidden md:inline">{t('edit_mode')}</span>
-                              </button>
-                          </div>
-                          <div className={`h-6 w-px mx-1 hidden md:block ${isDarkMode ? 'bg-white/5' : 'bg-gray-200'}`}></div>
-                        </>
-                     )}
+                  {/* 第二行：分享、保存、复制按钮 */}
+                  <div className="w-full flex items-center justify-end gap-1.5 md:gap-3 shrink-0">
+                    <PremiumButton 
+                        onClick={handleShareLink} 
+                        title={language === 'cn' ? '分享模版' : t('share_link')} 
+                        icon={Share2} 
+                        isDarkMode={isDarkMode}
+                        className="flex-none"
+                    >
+                        <span className="hidden md:inline ml-1.5">{language === 'cn' ? '分享模版' : t('share')}</span>
+                    </PremiumButton>
 
-                    <div className="flex-1 md:flex-none flex items-center justify-end gap-1.5 md:gap-3">
-                      <PremiumButton 
-                          onClick={handleShareLink} 
-                          title={language === 'cn' ? '分享模版' : t('share_link')} 
-                          icon={Share2} 
-                          isDarkMode={isDarkMode}
-                          className="flex-1 md:flex-none"
-                      >
-                          <span className="hidden md:inline ml-1.5">{language === 'cn' ? '分享模版' : t('share')}</span>
-                      </PremiumButton>
-
-                      <PremiumButton 
-                          onClick={handleExportImage} 
-                          disabled={isEditing || isExporting} 
-                          title={isExporting ? t('exporting') : (language === 'cn' ? '导出长图' : t('export_image'))} 
-                          icon={ImageIcon} 
-                          isDarkMode={isDarkMode}
-                          className="flex-1 md:flex-none"
-                      >
-                          <span className="hidden md:inline ml-1.5 truncate">{isExporting ? (language === 'cn' ? '导出中...' : 'Exp...') : (language === 'cn' ? '导出长图' : 'Img')}</span>
-                      </PremiumButton>
-                      <PremiumButton 
-                          onClick={handleCopy} 
-                          title={copied ? t('copied') : (language === 'cn' ? '复制结果' : t('copy_result'))} 
-                          icon={copied ? Check : CopyIcon} 
-                          active={true}
-                          isDarkMode={isDarkMode}
-                          className="flex-1 md:flex-none"
-                      >
-                           <span className="hidden md:inline ml-1.5 truncate">{copied ? t('copied') : (language === 'cn' ? '复制结果' : 'Copy')}</span>
-                      </PremiumButton>
-                    </div>
+                    <PremiumButton 
+                        onClick={handleExportImage} 
+                        disabled={isEditing || isExporting} 
+                        title={isExporting ? t('exporting') : (language === 'cn' ? '导出长图' : t('export_image'))} 
+                        icon={ImageIcon} 
+                        isDarkMode={isDarkMode}
+                        className="flex-none"
+                    >
+                        <span className="hidden md:inline ml-1.5 truncate">{isExporting ? (language === 'cn' ? '导出中...' : 'Exp...') : (language === 'cn' ? '导出长图' : 'Img')}</span>
+                    </PremiumButton>
+                    <PremiumButton 
+                        onClick={handleCopy} 
+                        title={copied ? t('copied') : (language === 'cn' ? '复制结果' : t('copy_result'))} 
+                        icon={copied ? Check : CopyIcon} 
+                        active={true}
+                        isDarkMode={isDarkMode}
+                        className="flex-none"
+                    >
+                         <span className="hidden md:inline ml-1.5 truncate">{copied ? t('copied') : (language === 'cn' ? '复制结果' : 'Copy')}</span>
+                    </PremiumButton>
                   </div>
                 </div>
               )}

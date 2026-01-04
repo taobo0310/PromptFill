@@ -643,16 +643,15 @@ export const BanksSidebar = React.memo(({
           <div className="flex flex-col items-start gap-1">
               <h1 className="font-black tracking-tight text-[22px] text-orange-500 flex items-baseline gap-2">
                   {t('bank_config')}
-                  <span className={`text-xs font-bold tracking-widest uppercase ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>Library</span>
               </h1>
           </div>
           <PremiumButton 
               onClick={() => setIsCategoryManagerOpen(true)}
-              title={t('manage_categories')}
+              title={t('manage')}
               icon={Settings}
               isDarkMode={isDarkMode}
           >
-              {t('manage_categories')}
+              {t('manage')}
           </PremiumButton>
         </div>
         <div className="flex flex-col gap-4">

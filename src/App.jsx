@@ -13,14 +13,15 @@ import { PREMIUM_STYLES, CATEGORY_STYLES, TAG_STYLES, TAG_LABELS } from './const
 import { MASONRY_STYLES } from './constants/masonryStyles';
 
 // ====== 导入工具函数 ======
-import { deepClone, makeUniqueKey, waitForImageLoad, getLocalized, getSystemLanguage, compressTemplate, decompressTemplate, copyToClipboard } from './utils/helpers';
+import { deepClone, makeUniqueKey, waitForImageLoad, getLocalized, getSystemLanguage, compressTemplate, decompressTemplate, copyToClipboard, saveDirectoryHandle } from './utils';
 import { mergeTemplatesWithSystem, mergeBanksWithSystem } from './utils/merge';
+import { generateAITerms } from './utils/aiService';  // AI 服务
 
 // ====== 导入自定义 Hooks ======
-import { useStickyState, useEditorHistory, useLinkageGroups, useShareFunctions, useTemplateManagement } from './hooks';
+import { useStickyState, useAsyncStickyState, useEditorHistory, useLinkageGroups, useShareFunctions, useTemplateManagement } from './hooks';
 
 // ====== 导入 UI 组件 ======
-import { Variable, VisualEditor, PremiumButton, EditorToolbar, Lightbox, TemplatePreview, TemplatesSidebar, BanksSidebar, CategoryManager, InsertVariableModal, AddBankModal, DiscoveryView, MobileSettingsView, SettingsView, Sidebar } from './components';
+import { Variable, VisualEditor, PremiumButton, EditorToolbar, Lightbox, TemplatePreview, TemplateEditor, TemplatesSidebar, BanksSidebar, CategoryManager, InsertVariableModal, AddBankModal, DiscoveryView, MobileSettingsView, SettingsView, Sidebar } from './components';
 import { ImagePreviewModal, AnimatedSlogan, MobileAnimatedSlogan } from './components/preview';
 import { MobileBottomNav } from './components/mobile';
 import { ShareOptionsModal, ImportTokenModal, ShareImportModal } from './components/modals';
@@ -37,7 +38,7 @@ import { DataUpdateNotice, AppUpdateNotice } from './components/notifications';
 
 const App = () => {
   // 当前应用代码版本 (必须与 package.json 和 version.json 一致)
-  const APP_VERSION = "0.7.0";
+  const APP_VERSION = "0.7.1";
 
   // 临时功能：瀑布流样式管理
   const [masonryStyleKey, setMasonryStyleKey] = useState('poster');
@@ -45,18 +46,21 @@ const App = () => {
   const currentMasonryStyle = MASONRY_STYLES[masonryStyleKey] || MASONRY_STYLES.default;
 
   // Global State with Persistence
-  // bump version keys to强制刷新新增词库与默认值
-  const [banks, setBanks] = useStickyState(INITIAL_BANKS, "app_banks_v9");
-  const [defaults, setDefaults] = useStickyState(INITIAL_DEFAULTS, "app_defaults_v9");
+  // 使用异步 IndexedDB 存储核心大数据
+  const [banks, setBanks, isBanksLoaded] = useAsyncStickyState(INITIAL_BANKS, "app_banks_v9");
+  const [defaults, setDefaults, isDefaultsLoaded] = useAsyncStickyState(INITIAL_DEFAULTS, "app_defaults_v9");
+  const [categories, setCategories, isCategoriesLoaded] = useAsyncStickyState(INITIAL_CATEGORIES, "app_categories_v1");
+  const [templates, setTemplates, isTemplatesLoaded] = useAsyncStickyState(INITIAL_TEMPLATES_CONFIG, "app_templates_v10");
+  
+  // 基础配置保持使用 LocalStorage (同步读取)
   const [language, setLanguage] = useStickyState(getSystemLanguage(), "app_language_v1"); // 全局UI语言
   const [templateLanguage, setTemplateLanguage] = useStickyState(getSystemLanguage(), "app_template_language_v1"); // 模板内容语言
-  const [categories, setCategories] = useStickyState(INITIAL_CATEGORIES, "app_categories_v1"); // New state
-  
-  const [templates, setTemplates] = useStickyState(INITIAL_TEMPLATES_CONFIG, "app_templates_v10");
   const [activeTemplateId, setActiveTemplateId] = useStickyState("tpl_default", "app_active_template_id_v4");
   
-  // Derived State: Current Active Template (必须在其它 hooks 和 effects 之前计算，避免 TDZ 错误)
-  const activeTemplate = templates.find(t => t.id === activeTemplateId) || templates[0];
+  // Derived State: Current Active Template
+  const activeTemplate = useMemo(() => {
+    return templates.find(t => t.id === activeTemplateId) || templates[0];
+  }, [templates, activeTemplateId]);
   
   const [lastAppliedDataVersion, setLastAppliedDataVersion] = useStickyState("", "app_data_version_v1");
   const [themeMode, setThemeMode] = useStickyState("system", "app_theme_mode_v1");
@@ -73,6 +77,32 @@ const App = () => {
       setIsDarkMode(themeMode === 'dark');
     }
   }, [themeMode]);
+
+  // 同步移动端浏览器状态栏颜色
+  useEffect(() => {
+    const themeColor = isDarkMode ? '#181716' : '#D6D6D6';
+    
+    // 1. 更新通用 theme-color
+    let meta = document.querySelector('meta[name="theme-color"]:not([media])');
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.setAttribute('name', 'theme-color');
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute('content', themeColor);
+    
+    // 2. 更新带 media 的 theme-color (保证系统级别平滑过渡)
+    const lightMeta = document.querySelector('meta[name="theme-color"][media*="light"]');
+    const darkMeta = document.querySelector('meta[name="theme-color"][media*="dark"]');
+    if (lightMeta) lightMeta.setAttribute('content', '#D6D6D6');
+    if (darkMeta) darkMeta.setAttribute('content', '#181716');
+    
+    // 3. 始终保持 black-translucent 以实现真正的全屏沉浸体验
+    let appleMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (appleMeta) {
+      appleMeta.setAttribute('content', 'black-translucent');
+    }
+  }, [isDarkMode]);
 
   const [showDataUpdateNotice, setShowDataUpdateNotice] = useState(false);
   const [showAppUpdateNotice, setShowAppUpdateNotice] = useState(false);
@@ -380,56 +410,66 @@ const App = () => {
       checkSupport();
   }, []);
 
-  // IndexedDB helper functions for storing directory handle
-  const openDB = () => {
-      return new Promise((resolve, reject) => {
-          const request = indexedDB.open('PromptFillDB', 1);
-          request.onerror = () => reject(request.error);
-          request.onsuccess = () => resolve(request.result);
-          request.onupgradeneeded = (event) => {
-              const db = event.target.result;
-              if (!db.objectStoreNames.contains('handles')) {
-                  db.createObjectStore('handles');
-              }
-          };
-      });
-  };
+  // ====== 数据迁移与初始化 ======
+  useEffect(() => {
+    async function migrateAndInit() {
+      const { isMigrated, markMigrated, dbSet, openDB, getDirectoryHandle } = await import('./utils/db');
+      
+      if (!isMigrated()) {
+        console.log('检测到旧版 LocalStorage 数据，开始执行 IndexedDB 迁移...');
+        try {
+          // 迁移模板
+          const oldTemplates = localStorage.getItem("app_templates_v10");
+          if (oldTemplates) await dbSet("app_templates_v10", JSON.parse(oldTemplates));
+          
+          // 迁移词库
+          const oldBanks = localStorage.getItem("app_banks_v9");
+          if (oldBanks) await dbSet("app_banks_v9", JSON.parse(oldBanks));
+          
+          // 迁移分类
+          const oldCategories = localStorage.getItem("app_categories_v1");
+          if (oldCategories) await dbSet("app_categories_v1", JSON.parse(oldCategories));
+          
+          // 迁移默认值
+          const oldDefaults = localStorage.getItem("app_defaults_v9");
+          if (oldDefaults) await dbSet("app_defaults_v9", JSON.parse(oldDefaults));
 
-  const saveDirectoryHandle = async (handle) => {
-      try {
-          const db = await openDB();
-          const transaction = db.transaction(['handles'], 'readwrite');
-          const store = transaction.objectStore('handles');
-          await store.put(handle, 'directory');
-      } catch (error) {
-          console.error('保存文件夹句柄失败:', error);
+          markMigrated();
+          console.log('数据迁移完成！');
+          
+          // 迁移完成后刷新页面以应用新数据
+          window.location.reload();
+        } catch (error) {
+          console.error('数据迁移失败:', error);
+        }
       }
-  };
 
-  const getDirectoryHandle = async (db) => {
-      try {
-          const transaction = db.transaction(['handles'], 'readonly');
-          const store = transaction.objectStore('handles');
-          return new Promise((resolve, reject) => {
-              const request = store.get('directory');
-              request.onsuccess = () => resolve(request.result);
-              request.onerror = () => reject(request.error);
-          });
-      } catch (error) {
-          console.error('获取文件夹句柄失败:', error);
-          return null;
+      // 重新恢复文件夹句柄
+      const db = await openDB();
+      const handle = await getDirectoryHandle(db);
+      if (handle) {
+        setDirectoryHandle(handle);
+        // 验证权限
+        const permission = await handle.queryPermission({ mode: 'readwrite' });
+        if (permission !== 'granted') {
+          console.log('文件夹访问权限已过期，需重新授权');
+        }
       }
-  };
+    }
+    migrateAndInit();
+  }, []);
 
   // Fix initial categories if empty (migration safety)
   useEffect(() => {
-      if (!categories || Object.keys(categories).length === 0) {
+      if (isCategoriesLoaded && (!categories || Object.keys(categories).length === 0)) {
           setCategories(INITIAL_CATEGORIES);
       }
-  }, []);
+  }, [isCategoriesLoaded]);
 
   // Ensure all templates have tags field and sync default templates' tags (migration safety)
   useEffect(() => {
+    if (!isTemplatesLoaded) return;
+    
     let needsUpdate = false;
     const updatedTemplates = templates.map(t => {
       // Find if this is a default template
@@ -453,7 +493,7 @@ const App = () => {
     if (needsUpdate) {
       setTemplates(updatedTemplates);
     }
-  }, []);
+  }, [isTemplatesLoaded]);
 
 
   // ====== Bank 相关函数（需要在 Hook 之前定义）======
@@ -464,6 +504,17 @@ const App = () => {
       [key]: {
         ...prev[key],
         options: [...prev[key].options, newOption]
+      }
+    }));
+  }, [setBanks]);
+
+  const handleUpdateOption = React.useCallback((key, oldOption, newOption) => {
+    if (!newOption.trim()) return;
+    setBanks(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        options: prev[key].options.map(opt => opt === oldOption ? newOption : opt)
       }
     }));
   }, [setBanks]);
@@ -652,6 +703,21 @@ const App = () => {
   const handleAddCustomAndSelect = React.useCallback((key, index, newValue) => {
     handleAddCustomAndSelectFromHook(key, index, newValue, setActivePopover);
   }, [handleAddCustomAndSelectFromHook]);
+
+  // AI 生成词条处理函数（占位实现）
+  const handleGenerateAITerms = React.useCallback(async (params) => {
+    console.log('[App] AI Generation Request:', params);
+
+    // 调用 AI 服务生成词条
+    try {
+      const result = await generateAITerms(params);
+      console.log('[App] AI Generation Result:', result);
+      return result;
+    } catch (error) {
+      console.error('[App] AI Generation Error:', error);
+      throw error;
+    }
+  }, []);
 
   // 分享相关函数已移至 useShareFunctions Hook
 
@@ -1067,7 +1133,7 @@ const App = () => {
           }
           
           // 移除文件大小限制，让用户自由上传
-          // 如果超出localStorage限制，会在useStickyState中捕获并提示
+          // 数据保存现在通过 useAsyncStickyState 异步处理到 IndexedDB
           
           const reader = new FileReader();
           
@@ -2155,9 +2221,20 @@ const App = () => {
     backgroundClip: 'padding-box, border-box',
   };
 
+  if (!isTemplatesLoaded || !isBanksLoaded || !isCategoriesLoaded || !isDefaultsLoaded) {
+    return (
+      <div className={`flex items-center justify-center h-screen w-screen ${isDarkMode ? 'bg-[#181716] text-white' : 'bg-[#FAF5F1] text-gray-800'}`}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-orange-400 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-medium opacity-70">加载中...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`flex h-screen w-screen overflow-hidden p-0 md:p-4 ${isDarkMode ? 'dark-mode dark-gradient-bg' : 'mesh-gradient-bg'}`}
+      className={`flex h-screen h-[100dvh] w-screen overflow-hidden p-0 md:p-4 ${isDarkMode ? 'dark-mode dark-gradient-bg' : 'mesh-gradient-bg'}`}
       onTouchMove={(e) => touchDraggingVar && onTouchDragMove(e.touches[0].clientX, e.touches[0].clientY)}
       onTouchEnd={(e) => touchDraggingVar && onTouchDragEnd(e.changedTouches[0].clientX, e.changedTouches[0].clientY)}
     >
@@ -2262,6 +2339,7 @@ const App = () => {
             setLanguage={setLanguage}
             storageMode={storageMode}
             setStorageMode={setStorageMode}
+            directoryHandle={directoryHandle}
             handleImportTemplate={handleImportTemplate}
             handleExportAllTemplates={handleExportAllTemplates}
             handleResetSystemData={handleRefreshSystemData}
@@ -2357,364 +2435,178 @@ const App = () => {
             />
 
             {/* --- 2. Main Editor (Middle) --- */}
-            <div 
-              style={!isMobileDevice ? globalContainerStyle : {}}
-              className={`
-                ${(mobileTab === 'editor' || mobileTab === 'settings') ? 'flex fixed inset-0 z-50 md:static md:bg-transparent' : 'hidden'} 
-                ${(mobileTab === 'editor' || mobileTab === 'settings') && isMobileDevice ? (isDarkMode ? 'bg-[#242120]' : 'bg-white') : ''}
-                md:flex flex-1 shrink-[1] md:min-w-[400px] flex-col h-full overflow-hidden relative
-                md:rounded-2xl origin-left
-              `}
-            >
-                <div className={`flex flex-col w-full h-full ${!isMobileDevice ? (isDarkMode ? 'bg-black/20 backdrop-blur-sm rounded-2xl' : 'bg-white/30 backdrop-blur-sm rounded-2xl') : ''}`}>
-                {/* Mobile Side Drawer Triggers */}
-                {isMobileDevice && (
-                  <>
-                    <div className={`md:hidden absolute left-0 top-1/2 -translate-y-1/2 z-40 transition-all duration-300 ${mobileTab === 'editor' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                      <button 
-                        onClick={() => setIsTemplatesDrawerOpen(true)}
-                        className={`p-3 backdrop-blur-md rounded-r-2xl shadow-lg border border-l-0 active:scale-95 transition-all ${isDarkMode ? 'bg-black/40 border-white/5 text-gray-600' : 'bg-white/60 border-white/40 text-gray-400'}`}
-                      >
-                        <ChevronRight size={20} />
-                      </button>
-                    </div>
-                    <div className={`md:hidden absolute right-0 top-1/2 -translate-y-1/2 z-40 transition-all duration-300 ${mobileTab === 'editor' ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                      <button 
-                        onClick={() => setIsBanksDrawerOpen(true)}
-                        className={`p-3 backdrop-blur-md rounded-l-2xl shadow-lg border border-r-0 active:scale-95 transition-all ${isDarkMode ? 'bg-black/40 border-white/5 text-gray-600' : 'bg-white/60 border-white/40 text-gray-400'}`}
-                      >
-                        <ChevronLeft size={20} />
-                      </button>
-                    </div>
-                  </>
-                )}
-              
-              {/* 顶部工具栏 */}
-              {(!isMobileDevice || mobileTab !== 'settings') && (
-                <div className={`px-4 md:px-8 py-3 md:py-4 border-b flex flex-col gap-3 z-20 h-auto ${isDarkMode ? 'border-white/5' : 'border-gray-100/50'}`}>
-                  {/* 第一行：标题、语言切换与模式切换 */}
-                  <div className="w-full flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      {/* Language Toggle - Mobile: Left of Title */}
-                      {isMobileDevice && activeTemplate && (() => {
-                        const templateLangs = activeTemplate.language ? (Array.isArray(activeTemplate.language) ? activeTemplate.language : [activeTemplate.language]) : ['cn', 'en'];
-                        if (templateLangs.length <= 1) return null;
-                        const supportsChinese = templateLangs.includes('cn');
-                        const supportsEnglish = templateLangs.includes('en');
-                        return (
-                          <div className={`premium-toggle-container ${isDarkMode ? 'dark' : 'light'} scale-90 origin-left shrink-0`}>
-                              <button 
-                                  onClick={() => supportsChinese && setTemplateLanguage('cn')}
-                                  className={`premium-toggle-item ${isDarkMode ? 'dark' : 'light'} ${templateLanguage === 'cn' ? 'is-active' : ''} !px-2`}
-                              >
-                                  CN
-                              </button>
-                              <button 
-                                  onClick={() => supportsEnglish && setTemplateLanguage('en')}
-                                  className={`premium-toggle-item ${isDarkMode ? 'dark' : 'light'} ${templateLanguage === 'en' ? 'is-active' : ''} !px-2`}
-                              >
-                                  EN
-                              </button>
-                          </div>
-                        );
-                      })()}
+            <TemplateEditor
+              // ===== 模板数据 =====
+              activeTemplate={activeTemplate}
+              banks={banks}
+              defaults={defaults}
+              categories={categories}
+              INITIAL_TEMPLATES_CONFIG={INITIAL_TEMPLATES_CONFIG}
+              TEMPLATE_TAGS={TEMPLATE_TAGS}
+              TAG_STYLES={TAG_STYLES}
 
-                      {!isMobileDevice && (
-                        <h1 className={`text-xl md:text-2xl font-black truncate tracking-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{getLocalized(activeTemplate.name, language)}</h1>
-                      )}
-                      
-                      {/* Language Toggle - Desktop: Right of Title */}
-                      {!isMobileDevice && activeTemplate && (() => {
-                        const templateLangs = activeTemplate.language ? (Array.isArray(activeTemplate.language) ? activeTemplate.language : [activeTemplate.language]) : ['cn', 'en'];
-                        const showLanguageToggle = templateLangs.length > 1;
-                        const supportsChinese = templateLangs.includes('cn');
-                        const supportsEnglish = templateLangs.includes('en');
-                        
-                        if (!showLanguageToggle) return null;
+              // ===== 语言相关 =====
+              language={language}
+              templateLanguage={templateLanguage}
+              setTemplateLanguage={setTemplateLanguage}
 
-                        return (
-                          <div className={`premium-toggle-container ${isDarkMode ? 'dark' : 'light'} shrink-0`}>
-                              <button 
-                                  onClick={() => supportsChinese && setTemplateLanguage('cn')}
-                                  disabled={!supportsChinese}
-                                  className={`
-                                      premium-toggle-item ${isDarkMode ? 'dark' : 'light'}
-                                      ${!supportsChinese 
-                                          ? 'opacity-30 cursor-not-allowed' 
-                                          : templateLanguage === 'cn' 
-                                              ? 'is-active' 
-                                              : ''}
-                                  `}
-                              >
-                                  CN
-                              </button>
-                              <button 
-                                  onClick={() => supportsEnglish && setTemplateLanguage('en')}
-                                  disabled={!supportsEnglish}
-                                  className={`
-                                      premium-toggle-item ${isDarkMode ? 'dark' : 'light'}
-                                      ${!supportsEnglish 
-                                          ? 'opacity-30 cursor-not-allowed' 
-                                          : templateLanguage === 'en' 
-                                              ? 'is-active' 
-                                              : ''}
-                                  `}
-                              >
-                                  EN
-                              </button>
-                          </div>
-                        );
-                      })()}
-                    </div>
+              // ===== 编辑模式状态 =====
+              isEditing={isEditing}
+              setIsEditing={setIsEditing}
+              handleStartEditing={handleStartEditing}
+              handleStopEditing={handleStopEditing}
 
-                    {/* 模式切换 */}
-                    <div className={`premium-toggle-container ${isDarkMode ? 'dark' : 'light'} shrink-0`}>
-                        <button
-                            onClick={handleStopEditing}
-                            className={`premium-toggle-item ${isDarkMode ? 'dark' : 'light'} ${!isEditing ? 'is-active' : ''}`}
-                            title={t('preview_mode')}
-                        >
-                            <Eye size={14} /> <span className="hidden md:inline ml-1.5">{t('preview_mode')}</span>
-                        </button>
-                        <button
-                            onClick={handleStartEditing}
-                            className={`premium-toggle-item ${isDarkMode ? 'dark' : 'light'} ${isEditing ? 'is-active' : ''}`}
-                            title={t('edit_mode')}
-                        >
-                            <Edit3 size={14} /> <span className="hidden md:inline ml-1.5">{t('edit_mode')}</span>
-                        </button>
-                    </div>
-                  </div>
-                  
-                  {/* 第二行：分享、保存、复制按钮 */}
-                  <div className="w-full flex items-center justify-end gap-1.5 md:gap-3 shrink-0">
-                    <PremiumButton 
-                        onClick={handleShareLink} 
-                        title={language === 'cn' ? '分享模版' : t('share_link')} 
-                        icon={Share2} 
-                        isDarkMode={isDarkMode}
-                        className="flex-none"
+              // ===== 历史记录 =====
+              historyPast={historyPast}
+              historyFuture={historyFuture}
+              handleUndo={handleUndo}
+              handleRedo={handleRedo}
+
+              // ===== 联动组 =====
+              cursorInVariable={cursorInVariable}
+              currentGroupId={currentGroupId}
+              handleSetGroup={handleSetGroup}
+              handleRemoveGroup={handleRemoveGroup}
+
+              // ===== 变量交互 =====
+              activePopover={activePopover}
+              setActivePopover={setActivePopover}
+              handleSelect={handleSelect}
+              handleAddCustomAndSelect={handleAddCustomAndSelect}
+              popoverRef={popoverRef}
+
+              // ===== 标题编辑 =====
+              editingTemplateNameId={editingTemplateNameId}
+              tempTemplateName={tempTemplateName}
+              setTempTemplateName={setTempTemplateName}
+              saveTemplateName={saveTemplateName}
+              startRenamingTemplate={startRenamingTemplate}
+              setEditingTemplateNameId={setEditingTemplateNameId}
+              tempTemplateAuthor={tempTemplateAuthor}
+              setTempTemplateAuthor={setTempTemplateAuthor}
+
+              // ===== 标签编辑 =====
+              handleUpdateTemplateTags={handleUpdateTemplateTags}
+              editingTemplateTags={editingTemplateTags}
+              setEditingTemplateTags={setEditingTemplateTags}
+
+              // ===== 图片管理 =====
+              fileInputRef={fileInputRef}
+              setShowImageUrlInput={setShowImageUrlInput}
+              handleResetImage={handleResetImage}
+              handleDeleteImage={handleDeleteImage}
+              setImageUpdateMode={setImageUpdateMode}
+              setCurrentImageEditIndex={setCurrentImageEditIndex}
+
+              // ===== 分享/导出/复制 =====
+              handleShareLink={handleShareLink}
+              handleExportImage={handleExportImage}
+              isExporting={isExporting}
+              handleCopy={handleCopy}
+              copied={copied}
+
+              // ===== 模态框 =====
+              setIsInsertModalOpen={setIsInsertModalOpen}
+
+              // ===== 其他 =====
+              updateActiveTemplateContent={updateActiveTemplateContent}
+              setZoomedImage={setZoomedImage}
+              t={t}
+              isDarkMode={isDarkMode}
+              isMobileDevice={isMobileDevice}
+              mobileTab={mobileTab}
+              textareaRef={textareaRef}
+              // AI 相关
+              onGenerateAITerms={handleGenerateAITerms}
+            />
+
+            {/* Mobile Side Drawer Triggers - 保持在 TemplateEditor 外部 */}
+            {isMobileDevice && mobileTab === 'editor' && (
+              <>
+                <div className={`md:hidden fixed left-0 top-1/2 -translate-y-1/2 z-50 transition-all duration-300`}>
+                  <button
+                    onClick={() => setIsTemplatesDrawerOpen(true)}
+                    className={`p-3 backdrop-blur-md rounded-r-2xl shadow-lg border border-l-0 active:scale-95 transition-all ${isDarkMode ? 'bg-black/40 border-white/5 text-gray-600' : 'bg-white/60 border-white/40 text-gray-400'}`}
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </div>
+                <div className={`md:hidden fixed right-0 top-1/2 -translate-y-1/2 z-50 transition-all duration-300`}>
+                  <button
+                    onClick={() => setIsBanksDrawerOpen(true)}
+                    className={`p-3 backdrop-blur-md rounded-l-2xl shadow-lg border border-r-0 active:scale-95 transition-all ${isDarkMode ? 'bg-black/40 border-white/5 text-gray-600' : 'bg-white/60 border-white/40 text-gray-400'}`}
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Image URL Input Modal - 保持在 TemplateEditor 外部 */}
+            {showImageUrlInput && (
+              <div
+                className="fixed inset-0 z-[90] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
+                onClick={() => { setShowImageUrlInput(false); setImageUrlInput(""); }}
+              >
+                <div
+                  className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <Globe size={20} className="text-blue-500" />
+                    {t('image_url')}
+                  </h3>
+                  <input
+                    autoFocus
+                    type="text"
+                    value={imageUrlInput}
+                    onChange={(e) => setImageUrlInput(e.target.value)}
+                    placeholder={t('image_url_placeholder')}
+                    className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    onKeyDown={(e) => e.key === 'Enter' && handleSetImageUrl()}
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      onClick={handleSetImageUrl}
+                      disabled={!imageUrlInput.trim()}
+                      className="flex-1 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                     >
-                        <span className="hidden md:inline ml-1.5">{language === 'cn' ? '分享模版' : t('share')}</span>
-                    </PremiumButton>
-
-                    <PremiumButton 
-                        onClick={handleExportImage} 
-                        disabled={isEditing || isExporting} 
-                        title={isExporting ? t('exporting') : (language === 'cn' ? '导出长图' : t('export_image'))} 
-                        icon={ImageIcon} 
-                        isDarkMode={isDarkMode}
-                        className="flex-none"
+                      {t('use_url')}
+                    </button>
+                    <button
+                      onClick={() => { setShowImageUrlInput(false); setImageUrlInput(""); }}
+                      className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-all"
                     >
-                        <span className="hidden md:inline ml-1.5 truncate">{isExporting ? (language === 'cn' ? '导出中...' : 'Exp...') : (language === 'cn' ? '导出长图' : 'Img')}</span>
-                    </PremiumButton>
-                    <PremiumButton 
-                        onClick={handleCopy} 
-                        title={copied ? t('copied') : (language === 'cn' ? '复制结果' : t('copy_result'))} 
-                        icon={copied ? Check : CopyIcon} 
-                        active={true}
-                        isDarkMode={isDarkMode}
-                        className="flex-none"
-                    >
-                         <span className="hidden md:inline ml-1.5 truncate">{copied ? t('copied') : (language === 'cn' ? '复制结果' : 'Copy')}</span>
-                    </PremiumButton>
+                      {t('cancel')}
+                    </button>
                   </div>
                 </div>
-              )}
-
-              {/* 核心内容区 */}
-              <div className={`flex-1 overflow-hidden relative pb-24 md:pb-0 flex flex-col ${mobileTab === 'settings' ? 'pt-0' : ''}`}>
-                  {mobileTab === 'settings' ? (
-                      <div className={`flex-1 flex flex-col overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-[#181716]' : 'bg-white'}`}>
-                          <MobileSettingsView 
-                              language={language}
-                              setLanguage={setLanguage}
-                              storageMode={storageMode}
-                              setStorageMode={setStorageMode}
-                              handleImportTemplate={handleImportTemplate}
-                              handleExportAllTemplates={handleExportAllTemplates}
-                              handleCompleteBackup={handleCompleteBackup}
-                              handleImportAllData={handleImportAllData}
-                              handleResetSystemData={handleRefreshSystemData}
-                              handleClearAllData={handleClearAllData}
-                              SYSTEM_DATA_VERSION={SYSTEM_DATA_VERSION}
-                              t={t}
-                              isDarkMode={isDarkMode}
-                              themeMode={themeMode}
-                              setThemeMode={setThemeMode}
-                          />
-                      </div>
-                  ) : (
-                    <>
-                      {isEditing && (
-                          <div className={`backdrop-blur-sm ${isDarkMode ? 'bg-black/20' : 'bg-white/30'}`}>
-                            <EditorToolbar 
-                                onInsertClick={() => setIsInsertModalOpen(true)}
-                                canUndo={historyPast.length > 0}
-                                canRedo={historyFuture.length > 0}
-                                onUndo={handleUndo}
-                                onRedo={handleRedo}
-                                t={t}
-                                isDarkMode={isDarkMode}
-                                cursorInVariable={cursorInVariable}
-                                currentGroupId={currentGroupId}
-                                onSetGroup={handleSetGroup}
-                                onRemoveGroup={handleRemoveGroup}
-                            />
-                          </div>
-                      )}
-                      
-                      {isEditing ? (
-                          <div className="flex-1 relative overflow-hidden flex flex-col">
-                              {/* Edit Mode: Title & Author Inputs */}
-                              <div className={`px-8 pt-6 pb-4 flex flex-col gap-4 border-b ${isDarkMode ? 'bg-black/20 border-white/5' : 'bg-gray-50 border-gray-200'}`}>
-                                  <div className="flex flex-col gap-1.5">
-                                      <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-                                          {language === 'cn' ? '模版标题 (Title)' : 'Template Title'}
-                                      </label>
-                                      <input 
-                                          type="text" 
-                                          value={tempTemplateName}
-                                          onChange={(e) => setTempTemplateName(e.target.value)}
-                                          onBlur={saveTemplateName}
-                                          className={`text-xl font-bold bg-transparent border-b-2 border-orange-500/20 focus:border-orange-500 focus:outline-none w-full pb-1 transition-all ${isDarkMode ? 'text-white' : 'text-gray-800'}`}
-                                          placeholder={t('label_placeholder')}
-                                      />
-                                  </div>
-                                  <div className="flex flex-col gap-1.5">
-                                      <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-                                          {language === 'cn' ? '作者 (Author)' : 'Author'}
-                                      </label>
-                                      <div className="relative">
-                                          <input 
-                                              type="text" 
-                                              value={tempTemplateAuthor}
-                                              onChange={(e) => setTempTemplateAuthor(e.target.value)}
-                                              onBlur={saveTemplateName}
-                                              disabled={INITIAL_TEMPLATES_CONFIG.some(cfg => cfg.id === activeTemplate.id)}
-                                              className={`text-sm font-bold bg-transparent border-b border-dashed focus:border-solid border-orange-500/30 focus:border-orange-500 focus:outline-none w-full pb-1 transition-all ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
-                                              placeholder={language === 'cn' ? '作者名称...' : 'Author name...'}
-                                          />
-                                          {INITIAL_TEMPLATES_CONFIG.some(cfg => cfg.id === activeTemplate.id) && (
-                                              <p className="text-[10px] text-orange-500/50 font-bold italic mt-1">
-                                                  {language === 'cn' ? '* 系统模版作者不可修改' : '* System template author is read-only'}
-                                              </p>
-                                          )}
-                                      </div>
-                                  </div>
-                              </div>
-                              <VisualEditor
-                                  ref={textareaRef}
-                                  value={getLocalized(activeTemplate.content, templateLanguage)}
-                                  onChange={(e) => {
-                                      const newText = e.target.value;
-                                      if (typeof activeTemplate.content === 'object') {
-                                          updateActiveTemplateContent({
-                                              ...activeTemplate.content,
-                                              [templateLanguage]: newText
-                                          });
-                                      } else {
-                                          updateActiveTemplateContent(newText);
-                                      }
-                                  }}
-                                  banks={banks}
-                                  categories={categories}
-                                  isDarkMode={isDarkMode}
-                                  activeTemplate={activeTemplate}
-                                  language={language}
-                                  t={t}
-                              />
-                          </div>
-                      ) : (
-                          <TemplatePreview 
-                              activeTemplate={activeTemplate}
-                              banks={banks}
-                              defaults={defaults}
-                              categories={categories}
-                              activePopover={activePopover}
-                              setActivePopover={setActivePopover}
-                              handleSelect={handleSelect}
-                              handleAddCustomAndSelect={handleAddCustomAndSelect}
-                              popoverRef={popoverRef}
-                              t={t}
-                              displayTag={displayTag}
-                              TAG_STYLES={TAG_STYLES}
-                              setZoomedImage={setZoomedImage}
-                              fileInputRef={fileInputRef}
-                              setShowImageUrlInput={setShowImageUrlInput}
-                              handleResetImage={handleResetImage}
-                              handleDeleteImage={handleDeleteImage}
-                              language={templateLanguage}
-                              setLanguage={setTemplateLanguage}
-                              // 标签编辑相关
-                              TEMPLATE_TAGS={TEMPLATE_TAGS}
-                              handleUpdateTemplateTags={handleUpdateTemplateTags}
-                              editingTemplateTags={editingTemplateTags}
-                              setEditingTemplateTags={setEditingTemplateTags}
-                              // 多图编辑相关
-                              setImageUpdateMode={setImageUpdateMode}
-                              setCurrentImageEditIndex={setCurrentImageEditIndex}
-                              // 标题编辑相关
-                              editingTemplateNameId={editingTemplateNameId}
-                              tempTemplateName={tempTemplateName}
-                              setTempTemplateName={setTempTemplateName}
-                              saveTemplateName={saveTemplateName}
-                              startRenamingTemplate={startRenamingTemplate}
-                              setEditingTemplateNameId={setEditingTemplateNameId}
-                              tempTemplateAuthor={tempTemplateAuthor}
-                              setTempTemplateAuthor={setTempTemplateAuthor}
-                              INITIAL_TEMPLATES_CONFIG={INITIAL_TEMPLATES_CONFIG}
-                              globalContainerStyle={globalContainerStyle}
-                              isDarkMode={isDarkMode}
-                          />
-                      )}
-                    </>
-                  )}
-                           
-                           {/* Image URL Input Modal */}
-                           {showImageUrlInput && (
-                               <div 
-                                   className="fixed inset-0 z-[90] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-                                   onClick={() => { setShowImageUrlInput(false); setImageUrlInput(""); }}
-                               >
-                                   <div 
-                                       className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full"
-                                       onClick={(e) => e.stopPropagation()}
-                                   >
-                                       <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                           <Globe size={20} className="text-blue-500" />
-                                           {t('image_url')}
-                                       </h3>
-                                       <input
-                                           autoFocus
-                                           type="text"
-                                           value={imageUrlInput}
-                                           onChange={(e) => setImageUrlInput(e.target.value)}
-                                           placeholder={t('image_url_placeholder')}
-                                           className="w-full px-4 py-3 text-sm border border-gray-300 rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           onKeyDown={(e) => e.key === 'Enter' && handleSetImageUrl()}
-                                       />
-                                       <div className="flex gap-3">
-                                           <button
-                                               onClick={handleSetImageUrl}
-                                               disabled={!imageUrlInput.trim()}
-                                               className="flex-1 px-4 py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-                                           >
-                                               {t('use_url')}
-                                           </button>
-                                           <button
-                                               onClick={() => { setShowImageUrlInput(false); setImageUrlInput(""); }}
-                                               className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-all"
-                                           >
-                                               {t('cancel')}
-                                           </button>
-                                       </div>
-                                   </div>
-                               </div>
-                           )}
               </div>
-            </div>
-          </div>
+            )}
+
+            {/* Mobile Settings View - 保持在 TemplateEditor 外部 */}
+            {mobileTab === 'settings' && isMobileDevice && (
+              <div className={`fixed inset-0 z-40 flex flex-col transition-colors duration-300 pt-safe ${isDarkMode ? 'bg-[#2A2928]' : 'bg-white'}`}>
+                <MobileSettingsView
+                  language={language}
+                  setLanguage={setLanguage}
+                  storageMode={storageMode}
+                  setStorageMode={setStorageMode}
+                  directoryHandle={directoryHandle}
+                  handleImportTemplate={handleImportTemplate}
+                  handleExportAllTemplates={handleExportAllTemplates}
+                  handleCompleteBackup={handleCompleteBackup}
+                  handleImportAllData={handleImportAllData}
+                  handleResetSystemData={handleRefreshSystemData}
+                  handleClearAllData={handleClearAllData}
+                  SYSTEM_DATA_VERSION={SYSTEM_DATA_VERSION}
+                  t={t}
+                  isDarkMode={isDarkMode}
+                  themeMode={themeMode}
+                  setThemeMode={setThemeMode}
+                />
+              </div>
+            )}
 
             <BanksSidebar 
               mobileTab={mobileTab}
@@ -2729,6 +2621,7 @@ const App = () => {
               insertVariableToTemplate={insertVariableToTemplate}
               handleDeleteOption={handleDeleteOption}
               handleAddOption={handleAddOption}
+              handleUpdateOption={handleUpdateOption}
               handleDeleteBank={handleDeleteBank}
               handleUpdateBankCategory={handleUpdateBankCategory}
               handleStartAddBank={handleStartAddBank}

@@ -8,23 +8,23 @@ import { getLocalized } from '../utils/helpers';
 /**
  * TemplatePreview 组件 - 负责渲染模版的预览内容，包括变量交互
  */
-export const TemplatePreview = React.memo(({ 
-  activeTemplate, 
-  banks, 
-  defaults, 
-  categories, 
-  activePopover, 
-  setActivePopover, 
-  handleSelect, 
-  handleAddCustomAndSelect, 
-  popoverRef, 
-  t, 
-  displayTag, 
-  TAG_STYLES, 
-  setZoomedImage, 
-  fileInputRef, 
-  setShowImageUrlInput, 
-  handleResetImage, 
+export const TemplatePreview = React.memo(({
+  activeTemplate,
+  banks,
+  defaults,
+  categories,
+  activePopover,
+  setActivePopover,
+  handleSelect,
+  handleAddCustomAndSelect,
+  popoverRef,
+  t,
+  displayTag,
+  TAG_STYLES,
+  setZoomedImage,
+  fileInputRef,
+  setShowImageUrlInput,
+  handleResetImage,
   handleDeleteImage,
   language,
   setLanguage,
@@ -40,8 +40,8 @@ export const TemplatePreview = React.memo(({
   editingTemplateNameId,
   tempTemplateName,
   setTempTemplateName,
-  saveTemplateName, 
-  startRenamingTemplate, 
+  saveTemplateName,
+  startRenamingTemplate,
   setEditingTemplateNameId,
   tempTemplateAuthor,
   setTempTemplateAuthor,
@@ -61,6 +61,8 @@ export const TemplatePreview = React.memo(({
   updateActiveTemplateContent,
   textareaRef,
   templateLanguage,
+  // AI 相关（预留接口）
+  onGenerateAITerms = null,  // AI 生成词条的回调函数
 }) => {
   const [editImageIndex, setEditImageIndex] = React.useState(0);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
@@ -122,7 +124,7 @@ export const TemplatePreview = React.memo(({
     return { baseKey: varName, groupId: null };
   };
 
-  const parseLineWithVariables = (text, lineKeyPrefix, counters) => {
+  const parseLineWithVariables = (text, lineKeyPrefix, counters, fullContext = "") => {
     const parts = text.split(/({{[^}]+}})/g);
     return parts.map((part, idx) => {
       if (part.startsWith('{{') && part.endsWith('}}')) {
@@ -183,7 +185,7 @@ export const TemplatePreview = React.memo(({
         }
 
         return (
-          <Variable 
+          <Variable
             key={`${lineKeyPrefix}-${idx}`}
             id={fullKey}
             index={varIndex}
@@ -202,6 +204,8 @@ export const TemplatePreview = React.memo(({
             language={language}
             isDarkMode={isDarkMode}
             groupId={parsed.groupId}  // 传递 groupId 用于显示分组标识
+            onGenerateAITerms={onGenerateAITerms}  // 传递 AI 生成回调
+            templateContext={fullContext} // 传递全文内容
           />
         );
       }
@@ -239,7 +243,7 @@ export const TemplatePreview = React.memo(({
         content = (
           <React.Fragment key={lineIdx}>
             <span className={`${isDarkMode ? 'text-gray-600' : 'text-gray-400'} mt-2.5`}>•</span>
-            <span className="flex-1">{parseLineWithVariables(line.replace('- ', '').trim(), lineIdx, counters)}</span>
+            <span className="flex-1">{parseLineWithVariables(line.replace('- ', '').trim(), lineIdx, counters, contentToRender)}</span>
           </React.Fragment>
         );
         return <div key={lineIdx} className={className}>{content}</div>;
@@ -250,14 +254,14 @@ export const TemplatePreview = React.memo(({
          content = (
             <React.Fragment key={lineIdx}>
               <span className={`font-mono mt-1 min-w-[20px] ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>{number}</span>
-              <span className="flex-1">{parseLineWithVariables(text, lineIdx, counters)}</span>
+              <span className="flex-1">{parseLineWithVariables(text, lineIdx, counters, contentToRender)}</span>
             </React.Fragment>
         );
         return <div key={lineIdx} className={className}>{content}</div>;
       }
 
       if (typeof content === 'string') {
-          return <Type key={lineIdx} className={className}>{parseLineWithVariables(content, lineIdx, counters)}</Type>;
+          return <Type key={lineIdx} className={className}>{parseLineWithVariables(content, lineIdx, counters, contentToRender)}</Type>;
       }
       return <Type key={lineIdx} className={className}>{content}</Type>;
     });
@@ -269,7 +273,7 @@ export const TemplatePreview = React.memo(({
         <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat transition-all duration-700 opacity-30 blur-[60px] scale-110 pointer-events-none"
             style={{ 
-                backgroundImage: activeTemplate.imageUrl ? `url(${activeTemplate.imageUrl})` : 'none',
+                backgroundImage: currentImageUrl ? `url(${currentImageUrl})` : 'none',
             }}
         ></div>
         <div className={`absolute inset-0 pointer-events-none ${isDarkMode ? 'bg-black/30' : 'bg-white/5'}`}></div>
@@ -280,6 +284,23 @@ export const TemplatePreview = React.memo(({
                 className={`max-w-4xl mx-auto p-4 sm:p-6 md:p-8 lg:p-12 min-h-[500px] md:min-h-[600px] transition-all duration-500 relative ${isMobile ? (isDarkMode ? 'bg-[#242120]/90 border border-white/5 rounded-2xl shadow-2xl' : 'bg-white/90 border border-white/60 rounded-2xl shadow-xl') : (isDarkMode ? 'bg-black/20 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl' : 'bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 shadow-sm')}`}
             >
                 {/* --- Top Section: Title & Image --- */}
+                {isEditing && (
+                    <div className={`backdrop-blur-sm mb-6 rounded-xl overflow-hidden border ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-white/30 border-gray-100'}`}>
+                        <EditorToolbar
+                            onInsertClick={() => setIsInsertModalOpen(true)}
+                            canUndo={historyPast.length > 0}
+                            canRedo={historyFuture.length > 0}
+                            onUndo={handleUndo}
+                            onRedo={handleRedo}
+                            t={t}
+                            isDarkMode={isDarkMode}
+                            cursorInVariable={cursorInVariable}
+                            currentGroupId={currentGroupId}
+                            onSetGroup={handleSetGroup}
+                            onRemoveGroup={handleRemoveGroup}
+                        />
+                    </div>
+                )}
                 <div className={`flex flex-col md:flex-row justify-between items-start mb-6 md:mb-10 relative ${isEditing ? 'border-b pb-8' : ''} ${isDarkMode ? 'border-white/5' : 'border-gray-100'}`}>
                     {/* Left: Title & Meta Info */}
                     <div className="flex-1 min-w-0 pr-4 z-10 pt-2">

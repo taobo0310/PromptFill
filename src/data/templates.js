@@ -32,7 +32,7 @@
 /**
  * 模板系统版本号，每次更新 templates.js 或 banks.js 时请更新此版本号
  */
-export const SYSTEM_DATA_VERSION = "0.8.0";
+export const SYSTEM_DATA_VERSION = "0.8.1";
 
 /**
  * 分享功能正式环境域名（扫码导入需使用公网可访问地址）
@@ -998,17 +998,60 @@ export const TEMPLATE_CHARACTER_SHEET_ART = {
 
 **色彩:** 柔和淡彩色 (Soft pastel color palette)，高对比度 (High contrast)。`,
   en: `### Character Sheet
-**Core Content:** Character Sheet, based on {{character_originality}}.
+  **Core Content:** Character Sheet, based on {{character_originality}}.
+  
+  **Composition:** Multiple angles, expressive facial variations.
+  
+  **Medium:** {{art_tool}}.
+  
+  **Background:** {{background_style}}.
+  
+  **Style:** {{draw_style}}, sharp linework.
+  
+  **Color:** Soft pastel color palette, high contrast.`
+};
 
-**Composition:** Multiple angles, expressive facial variations.
+export const TEMPLATE_UNDERWATER_CAUSTICS = {
+  cn: `### 创意水下摄影：焦散之美 (Underwater Caustics)
 
-**Medium:** {{art_tool}}.
+**主体设定:**
+使用上传图片中的人物作为{{subject}}，严格保持面部特征的一致性。
+人物穿着一件{{clothing}}，由于在水下浸湿，衣物呈现出若隐若现的半透明质感。
 
-**Background:** {{background_style}}.
+**动作与场景:**
+人物沉浸在{{underwater_color}}的透明水下，姿态舒展，微微抬头仰望上方。
+身体周围环绕着许多{{creatures}}，营造出自然的生态律动感。
 
-**Style:** {{draw_style}}, sharp linework.
+**光影艺术 (Caustics):**
+核心视觉效果为强烈的**焦散光影（Caustics）**：阳光穿过起伏的水面，在人物的面部和衣服上投射出波动的金色光纹。
+光线在水中形成明显的**丁达尔效应 (Tyndall Effect)**，光柱从水面直插水底，增强空间深度。
 
-**Color:** Soft pastel color palette, high contrast.`
+**氛围与画质:**
+- **氛围:** 梦幻、超现实、静谧、电影质感。
+- **画质:** 照片级真实，8K分辨率，极高细节，捕捉每一处水花和气泡。
+
+**规格:**
+- **画幅:** {{ratio}}`,
+  en: `### Creative Underwater Photography: Beauty of Caustics
+
+**Subject:**
+Use the character from the uploaded image as {{subject}}, strictly maintaining facial consistency.
+The character is wearing a {{clothing}}, which appears semi-transparent due to being wet underwater.
+
+**Action & Scene:**
+The character is immersed in {{underwater_color}}, relaxed, and looking up slightly towards the surface.
+Surrounded by many {{creatures}}, creating a natural ecological flow.
+
+**Lighting (Caustics):**
+The core visual effect is strong **Caustics**: sunlight passing through the wavy water surface, casting undulating light patterns onto the character's face and clothes.
+Beams of light create a distinct **Tyndall Effect**, piercing through the water to enhance spatial depth.
+
+**Atmosphere & Quality:**
+- **Aura:** Dreamy, surreal, quiet, cinematic.
+- **Quality:** Photorealistic, 8K resolution, high detail, capturing every droplet and bubble.
+
+**Specifications:**
+- **Ratio:** {{ratio}}`
 };
 
 /**
@@ -1439,6 +1482,22 @@ export const INITIAL_TEMPLATES_CONFIG = [
       "draw_style": { cn: "手绘漫画风格", en: "Hand-drawn Manga Style" }
     },
     tags: ["人物", "创意"],
+    language: ["cn", "en"]
+  },
+  {
+    id: "tpl_underwater_caustics",
+    name: { cn: "水下焦散人像摄影", en: "Underwater Caustics Portrait" },
+    content: TEMPLATE_UNDERWATER_CAUSTICS,
+    imageUrl: "https://s41.ax1x.com/2026/01/05/pZdAL9K.jpg",
+    author: "@tanshilong",
+    selections: {
+      "subject": { cn: "女性", en: "Woman" },
+      "clothing": { cn: "白色衬衫与内衣", en: "white shirt and lingerie" },
+      "underwater_color": { cn: "深青色透明水下", en: "deep teal transparent underwater" },
+      "creatures": { cn: "许多银色小鱼", en: "many small silver fish" },
+      "ratio": { cn: "3:4竖构图", en: "3:4 Vertical" }
+    },
+    tags: ["人物", "摄影", "创意"],
     language: ["cn", "en"]
   }
 ];

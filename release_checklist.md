@@ -74,7 +74,33 @@ npm run sync-data
 
 ---
 
-## 6. 发版最终检查清单
+## 6. AI 功能维护 (AI Feature)
+
+### 功能开关
+- **`src/constants/aiConfig.js`**: `AI_FEATURE_ENABLED`
+  - 开发/测试环境建议开启 (`true`)。
+  - 生产环境发版前需确认是否开放此功能。
+
+### API Key 安全
+- API Key 仅存储在用户浏览器的 `localStorage` 中，**严禁**硬编码在代码或提交到 Git。
+- 测试时请确保清除本地缓存的测试 Key。
+
+### UI 兼容性
+- AI 功能开启时，`Variable` 组件会变为两列布局（宽度约 580px），需确保在各种屏幕尺寸下的显示效果。
+- 检查 `TemplateEditor` -> `TemplatePreview` -> `Variable` 的 `onGenerateAITerms` 回调传递是否正常。
+
+---
+
+## 7. 存储架构 (Storage)
+
+### IndexedDB 迁移
+- 核心数据（模板、词库、分类、默认值）已切换至 **IndexedDB** 存储，以突破 LocalStorage 的 5MB 限制。
+- 只有设置信息（语言、主题、最后版本号等）保留在 LocalStorage。
+- 发版前确保 `src/utils/db.js` 中的数据库版本号和迁移逻辑正常。
+
+---
+
+## 8. 发版最终检查清单
 
 1. [ ] `SYSTEM_DATA_VERSION` 已递增？
 2. [ ] 已运行 `npm run sync-data`？

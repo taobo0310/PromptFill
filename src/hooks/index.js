@@ -5,6 +5,7 @@
 
 // 现有的 Hooks
 export { useStickyState } from './useStickyState';
+export { useAsyncStickyState } from './useAsyncStickyState';
 
 // 新增的 Hooks
 export { useEditorHistory } from './useEditorHistory';

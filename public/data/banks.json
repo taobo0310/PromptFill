@@ -2476,6 +2476,56 @@
         }
       ]
     },
+    "underwater_color": {
+      "label": {
+        "cn": "水下色调",
+        "en": "Underwater Color"
+      },
+      "category": "location",
+      "options": [
+        {
+          "cn": "深青色透明水下",
+          "en": "deep teal transparent underwater"
+        },
+        {
+          "cn": "晶莹剔透的浅蓝色",
+          "en": "crystal clear light blue"
+        },
+        {
+          "cn": "神秘的深海蓝",
+          "en": "mysterious deep sea blue"
+        },
+        {
+          "cn": "梦幻的翡翠绿",
+          "en": "dreamy emerald green"
+        }
+      ]
+    },
+    "creatures": {
+      "label": {
+        "cn": "伴随生物",
+        "en": "Creatures"
+      },
+      "category": "character",
+      "options": [
+        {
+          "cn": "许多银色小鱼",
+          "en": "many small silver fish"
+        },
+        {
+          "cn": "发光的水母",
+          "en": "glowing jellyfish"
+        },
+        {
+          "cn": "五彩斑斓的热带鱼",
+          "en": "colorful tropical fish"
+        },
+        {
+          "cn": "巨大的蓝鲸(背景)",
+          "en": "a giant blue whale in the background"
+        }
+      ]
+    },
     "luxury_hobby_items": {
       "label": {
         "cn": "个人爱好/奢华",
@@ -2770,6 +2820,14 @@
     "luxury_hobby_items": {
       "cn": "珠宝：项链、耳环、戒指（宝石带色散效果）",
       "en": "Jewelry: Necklace, earrings, ring (gemstone dispersion)"
+    },
+    "underwater_color": {
+      "cn": "深青色透明水下",
+      "en": "deep teal transparent underwater"
+    },
+    "creatures": {
+      "cn": "许多银色小鱼",
+      "en": "many small silver fish"
     },
     "city_name": {
       "cn": "京都",

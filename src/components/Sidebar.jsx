@@ -1,5 +1,14 @@
 import React from 'react';
-import { Github, Moon, Sun } from 'lucide-react';
+import { GithubIcon } from './icons/GithubIcon';
+import { HomeIcon } from './icons/HomeIcon';
+import { ListIcon } from './icons/ListIcon';
+import { OrderIcon } from './icons/OrderIcon';
+import { RefreshIcon } from './icons/RefreshIcon';
+import { TranslateIcon } from './icons/TranslateIcon';
+import { SettingsIcon } from './icons/SettingsIcon';
+import { SunDimIcon } from './icons/SunDimIcon';
+import { SunMoonIcon } from './icons/SunMoonIcon';
+import { MoonIcon } from './icons/MoonIcon';
 
 /**
  * Sidebar 组件 - 通用侧边导航栏
@@ -26,33 +35,6 @@ export const Sidebar = ({
   setThemeMode,
   t
 }) => {
-  // 定义三种状态的颜色
-  const COLORS = isDarkMode ? {
-    NORMAL: '#8E9196',    // gray-400 equivalent but slightly adjusted
-    HOVER: '#F97316',     // orange-500
-    SELECTED: '#FB923C'   // orange-400
-  } : {
-    NORMAL: '#6B7280',    // gray-500
-    HOVER: '#F97316',     // orange-500
-    SELECTED: '#EA580C'   // orange-600
-  };
-
-  // 获取图标样式的辅助函数
-  const getIconStyle = () => ({
-    width: '24px',
-    height: '24px',
-    WebkitMaskImage: `var(--mask-url)`,
-    maskImage: `var(--mask-url)`,
-    WebkitMaskRepeat: 'no-repeat',
-    maskRepeat: 'no-repeat',
-    WebkitMaskPosition: 'center',
-    maskPosition: 'center',
-    WebkitMaskSize: 'contain',
-    maskSize: 'contain',
-    filter: isDarkMode ? 'none' : 'drop-shadow(0px 2px 0px rgba(255, 255, 255, 0.5))',
-    transition: 'all 0.3s ease'
-  });
-
   // 统一的容器样式
   const containerStyle = isDarkMode ? {
     width: '62px',
@@ -78,63 +60,39 @@ export const Sidebar = ({
       style={containerStyle}
       className="relative flex flex-col justify-between items-center py-8 mr-4 flex-shrink-0"
     >
-      {/* 圣诞帽 - 仅限桌面端显示 */}
-      <img 
-        src="/XmasHat.png" 
-        alt="Christmas Hat"
-        className="hidden lg:block pointer-events-none z-[100]"
-        style={{
-          position: 'absolute',
-          left: '-24px',
-          top: '-28px',
-          width: '60px',
-          height: '45px',
-          transform: 'rotate(-27.44deg)',
-          opacity: 1,
-        }}
-      />
       
       {/* 上部分：Logo + 导航按钮 */}
       <div className="flex flex-col items-center gap-8 w-full">
         {/* Logo */}
         <div className="mt-4 mb-2">
-          <img src="/Logo_icon.svg" alt="Logo" className="w-9 h-9" />
+          <img src="/Logo_icon.svg" alt="提示词填空器 (Prompt Fill) - AI 提示词管理工具" className="w-9 h-9" />
         </div>
 
         {/* 导航按钮组 */}
         <div className="flex flex-col items-center gap-6">
           <button 
             onClick={onHome}
-            className="p-2 group"
+            className={`p-2 group transition-colors ${activeTab === 'home' ? (isDarkMode ? 'text-[#FB923C]' : 'text-[#EA580C]') : (isDarkMode ? 'text-[#8E9196]' : 'text-[#6B7280]')} hover:text-[#F97316]`}
             title="主页"
           >
-            <div 
-              style={{ '--mask-url': 'url(/home.svg)', ...getIconStyle() }}
-              className={`group-hover:bg-[#F97316] ${activeTab === 'home' ? (isDarkMode ? 'bg-[#FB923C]' : 'bg-[#EA580C]') : (isDarkMode ? 'bg-[#8E9196]' : 'bg-[#6B7280]')}`}
-            />
+            <HomeIcon size={24} />
           </button>
           
           <button 
             onClick={onDetail}
-            className="p-2 group"
+            className={`p-2 group transition-colors ${activeTab === 'details' ? (isDarkMode ? 'text-[#FB923C]' : 'text-[#EA580C]') : (isDarkMode ? 'text-[#8E9196]' : 'text-[#6B7280]')} hover:text-[#F97316]`}
             title="详情页"
           >
-            <div 
-              style={{ '--mask-url': 'url(/list.svg)', ...getIconStyle() }}
-              className={`group-hover:bg-[#F97316] ${activeTab === 'details' ? (isDarkMode ? 'bg-[#FB923C]' : 'bg-[#EA580C]') : (isDarkMode ? 'bg-[#8E9196]' : 'bg-[#6B7280]')}`}
-            />
+            <ListIcon size={24} />
           </button>
           
           <div className="relative">
             <button 
               onClick={() => setIsSortMenuOpen(!isSortMenuOpen)}
-              className="p-2 group"
+              className={`p-2 group transition-colors ${isSortMenuOpen ? (isDarkMode ? 'text-[#FB923C]' : 'text-[#EA580C]') : (isDarkMode ? 'text-[#8E9196]' : 'text-[#6B7280]')} hover:text-[#F97316]`}
               title={t('sort')}
             >
-              <div 
-                style={{ '--mask-url': 'url(/order.svg)', ...getIconStyle() }}
-                className={`group-hover:bg-[#F97316] ${isSortMenuOpen ? (isDarkMode ? 'bg-[#FB923C]' : 'bg-[#EA580C]') : (isDarkMode ? 'bg-[#8E9196]' : 'bg-[#6B7280]')}`}
-              />
+              <OrderIcon size={24} />
             </button>
             
             {isSortMenuOpen && (
@@ -164,13 +122,10 @@ export const Sidebar = ({
 
           <button 
             onClick={onRefresh}
-            className="p-2 group"
+            className={`p-2 group transition-colors ${isDarkMode ? 'text-[#8E9196]' : 'text-[#6B7280]'} hover:text-[#F97316]`}
             title={t('refresh_desc')}
           >
-            <div 
-              style={{ '--mask-url': 'url(/refresh.svg)', ...getIconStyle() }}
-              className={`${isDarkMode ? 'bg-[#8E9196]' : 'bg-[#6B7280]'} group-hover:bg-[#F97316]`}
-            />
+            <RefreshIcon size={24} />
           </button>
         </div>
       </div>
@@ -179,13 +134,10 @@ export const Sidebar = ({
       <div className="flex flex-col items-center gap-6 w-full">
         <button 
           onClick={() => setLanguage(language === 'cn' ? 'en' : 'cn')}
-          className="p-2 group"
+          className={`p-2 group transition-colors ${isDarkMode ? 'text-[#8E9196]' : 'text-[#6B7280]'} hover:text-[#F97316]`}
           title={t('language')}
         >
-          <div 
-            style={{ '--mask-url': 'url(/translate.svg)', ...getIconStyle() }}
-            className={`${isDarkMode ? 'bg-[#8E9196]' : 'bg-[#6B7280]'} group-hover:bg-[#F97316]`}
-          />
+          <TranslateIcon size={24} />
         </button>
 
         <button 
@@ -194,17 +146,13 @@ export const Sidebar = ({
             else if (themeMode === 'dark') setThemeMode('system');
             else setThemeMode('light');
           }}
-          className="p-2 group relative"
+          className={`p-2 group relative transition-colors ${isDarkMode ? 'text-[#8E9196]' : 'text-[#6B7280]'} hover:text-[#F97316]`}
           title={themeMode === 'system' ? 'Follow System' : (themeMode === 'dark' ? 'Dark Mode' : 'Light Mode')}
         >
-          <div className={`${isDarkMode ? 'text-gray-400' : 'text-gray-400'} group-hover:text-[#F97316] transition-colors`}>
-            {themeMode === 'system' ? (
-              <div className="relative">
-                <Sun size={24} className="opacity-50" />
-                <Moon size={14} className="absolute -bottom-1 -right-1" />
-              </div>
-            ) : (themeMode === 'dark' ? <Moon size={24} /> : <Sun size={24} />)}
-          </div>
+          {themeMode === 'system' ? (
+            <SunMoonIcon size={24} />
+          ) : (themeMode === 'dark' ? <MoonIcon size={24} /> : <SunDimIcon size={24} />)}
+          
           {themeMode === 'system' && (
             <span className="absolute top-1 right-1 w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
           )}
@@ -212,23 +160,20 @@ export const Sidebar = ({
         
         <button 
           onClick={onSettings}
-          className="p-2 group"
+          className={`p-2 group transition-colors ${activeTab === 'settings' ? (isDarkMode ? 'text-[#FB923C]' : 'text-[#EA580C]') : (isDarkMode ? 'text-[#8E9196]' : 'text-[#6B7280]')} hover:text-[#F97316]`}
           title={t('settings')}
         >
-          <div 
-            style={{ '--mask-url': 'url(/setting.svg)', ...getIconStyle() }}
-            className={`group-hover:bg-[#F97316] ${activeTab === 'settings' ? (isDarkMode ? 'bg-[#FB923C]' : 'bg-[#EA580C]') : (isDarkMode ? 'bg-[#8E9196]' : 'bg-[#6B7280]')}`}
-          />
+          <SettingsIcon size={24} />
         </button>
         
         <a 
           href="https://github.com/TanShilongMario/PromptFill/" 
           target="_blank" 
           rel="noopener noreferrer"
-          className={`p-2 ${isDarkMode ? 'text-gray-500 hover:text-orange-400' : 'text-gray-400 hover:text-orange-600'} transition-colors`}
+          className={`p-2 transition-colors ${isDarkMode ? 'text-[#8E9196]' : 'text-[#6B7280]'} hover:text-[#F97316]`}
           title="Github"
         >
-          <Github size={24} style={{ filter: isDarkMode ? 'none' : 'drop-shadow(0px 2px 0px rgba(255, 255, 255, 0.5))' }} />
+          <GithubIcon size={24} />
         </a>
       </div>
     </aside>

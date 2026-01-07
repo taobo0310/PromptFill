@@ -55,28 +55,35 @@ export const useLinkageGroups = (
   const findLinkedVariables = useCallback((template, baseKey, groupId) => {
     if (!groupId) return []; // 没有 groupId 的变量不联动
 
-    const linkedKeys = [];
-    const content = typeof template.content === 'object'
-      ? Object.values(template.content).join('\n')
-      : template.content || '';
+    const linkedKeys = new Set();
+    
+    // 获取模版的所有内容（可能是对象或字符串）
+    const contentData = template.content;
+    const contents = typeof contentData === 'object' 
+      ? Object.values(contentData) 
+      : [contentData || ''];
 
-    // 找到所有 {{baseKey_groupId}} 格式的变量
-    const allMatches = content.matchAll(/\{\{([^}]+)\}\}/g);
-    const counters = {};
+    // 分别处理每段内容，以确保索引计算逻辑与渲染时保持一致
+    contents.forEach(content => {
+      if (!content) return;
+      
+      const allMatches = content.matchAll(/\{\{([^}]+)\}\}/g);
+      const counters = {};
 
-    for (const match of allMatches) {
-      const fullKey = match[1].trim();
-      const parsed = parseVariableName(fullKey);
+      for (const match of allMatches) {
+        const fullKey = match[1].trim();
+        const parsed = parseVariableName(fullKey);
 
-      // 匹配相同 baseKey 且相同 groupId 的变量
-      if (parsed.baseKey === baseKey && parsed.groupId === groupId) {
-        const idx = counters[fullKey] || 0;
-        counters[fullKey] = idx + 1;
-        linkedKeys.push(`${fullKey}-${idx}`);
+        // 匹配相同 baseKey 且相同 groupId 的变量
+        if (parsed.baseKey === baseKey && parsed.groupId === groupId) {
+          const idx = counters[fullKey] || 0;
+          counters[fullKey] = idx + 1;
+          linkedKeys.add(`${fullKey}-${idx}`);
+        }
       }
-    }
+    });
 
-    return linkedKeys;
+    return Array.from(linkedKeys);
   }, []);
 
   /**

@@ -8,6 +8,7 @@ import {
 export const SettingsView = ({ 
   language, setLanguage, 
   storageMode, setStorageMode,
+  directoryHandle,
   handleImportTemplate, handleExportAllTemplates,
   handleResetSystemData, handleClearAllData,
   handleSelectDirectory, handleSwitchToLocalStorage,
@@ -19,8 +20,33 @@ export const SettingsView = ({
 }) => {
   const [showWechatQR, setShowWechatQR] = useState(false);
   const [showCredits, setShowCredits] = useState(false);
+  const [storageStats, setStorageStats] = React.useState(null);
+
+  React.useEffect(() => {
+    if (storageMode === 'browser' && navigator.storage && navigator.storage.estimate) {
+      navigator.storage.estimate().then(estimate => {
+        setStorageStats({
+          usage: estimate.usage,
+          quota: estimate.quota,
+          percent: Math.round((estimate.usage / estimate.quota) * 100) || 0
+        });
+      });
+    }
+  }, [storageMode]);
   
   const updateLogs = language === 'cn' ? [
+    { 
+      version: 'V0.7.1', 
+      date: '2026年1月7日', 
+      time: '10:00 AM',
+      title: '存储架构升级与系统维护',
+      type: 'MAJOR',
+      content: [
+        '💾 存储架构升级：核心数据（模板、词库、分类）迁移至 IndexedDB，彻底解决 LocalStorage 5MB 限制。',
+        '🛠️ 系统维护：暂时下线“智能词条”功能，优化内部存储稳定性。',
+        '🆙 版本号更新：全站同步升级至 V0.7.1，包含元数据优化。'
+      ]
+    },
     { 
       version: 'V0.7.0', 
       date: '2026年1月3日', 
@@ -161,6 +187,18 @@ export const SettingsView = ({
       ]
     }
   ] : [
+    { 
+      version: 'V0.7.1', 
+      date: 'Jan 7, 2026', 
+      time: '10:00 AM',
+      title: 'Storage Upgrade & Maintenance',
+      type: 'MAJOR',
+      content: [
+        '💾 Storage Upgrade: Migrated core data (templates, banks) to IndexedDB, overcoming the 5MB LocalStorage limit.',
+        '🛠️ Maintenance: Temporarily disabled AI Terms feature and optimized internal storage stability.',
+        '🆙 Version Bump: Synchronized to V0.7.1 with metadata optimizations.'
+      ]
+    },
     { 
       version: 'V0.7.0', 
       date: 'Jan 3, 2026', 
@@ -313,18 +351,25 @@ export const SettingsView = ({
     </div>
   );
 
-  const SettingItem = ({ icon: Icon, label, value, onClick, disabled = false, danger = false, active = false }) => (
+  const SettingItem = ({ icon: Icon, label, value, onClick, disabled = false, danger = false, active = false, description = null }) => (
     <button 
       disabled={disabled}
       onClick={onClick}
       className={`group flex items-center justify-between p-2.5 rounded-xl transition-all duration-200 ${disabled ? 'opacity-30 cursor-not-allowed' : active ? (isDarkMode ? 'bg-orange-500/20' : 'bg-orange-500/10') : (isDarkMode ? 'hover:bg-white/5 active:scale-[0.98]' : 'hover:bg-orange-500/5 active:scale-[0.98]')}`}
     >
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex-1 flex items-center gap-3 min-w-0">
         <div className={`flex-shrink-0 transition-colors duration-200 ${danger ? 'text-red-500 group-hover:text-red-600' : active ? 'text-orange-600' : (isDarkMode ? 'text-gray-600 group-hover:text-orange-400' : 'text-gray-500 group-hover:text-orange-500')}`}>
           <Icon size={16} strokeWidth={2} />
         </div>
-        <div className={`text-[12px] font-bold tracking-tight truncate ${danger ? 'text-red-600' : active ? 'text-orange-600' : (isDarkMode ? 'text-gray-400 group-hover:text-gray-200' : 'text-gray-800')}`}>
-          {label}
+        <div className="flex flex-col items-start min-w-0">
+          <div className={`text-[12px] font-bold tracking-tight truncate ${danger ? 'text-red-600' : active ? 'text-orange-600' : (isDarkMode ? 'text-gray-400 group-hover:text-gray-200' : 'text-gray-800')}`}>
+            {label}
+          </div>
+          {description && (
+            <div className={`text-[10px] mt-0.5 opacity-60 truncate max-w-[200px] ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              {description}
+            </div>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0">
@@ -344,7 +389,7 @@ export const SettingsView = ({
           </h1>
           <div className="flex items-center gap-3 mt-1">
             <span className={`text-[9px] font-black tracking-[0.1em] uppercase ${isDarkMode ? 'text-gray-600' : 'text-gray-500'}`}>
-              System V0.7.0
+              System V0.7.1
             </span>
             <div className={`w-1 h-1 rounded-full ${isDarkMode ? 'bg-gray-700' : 'bg-gray-300'}`} />
             <span className="text-[9px] font-black text-orange-500/80 tracking-[0.1em] uppercase">
@@ -395,18 +440,41 @@ export const SettingsView = ({
             </SettingSection>
 
             <SettingSection title={language === 'cn' ? '数据存储' : 'Storage'}>
-              <SettingItem 
-                icon={Database} 
-                label={language === 'cn' ? '浏览器存储' : 'Browser'} 
-                active={storageMode === 'browser'}
-                onClick={handleSwitchToLocalStorage}
-              />
-              <SettingItem 
-                icon={FolderOpen} 
-                label={language === 'cn' ? '本地文件夹' : 'Local Folder'} 
-                active={storageMode === 'folder'}
-                onClick={handleSelectDirectory}
-              />
+              <div className="flex flex-col gap-1">
+                <SettingItem 
+                  icon={Database} 
+                  label={language === 'cn' ? '浏览器存储' : 'Browser'} 
+                  description={language === 'cn' ? '使用 IndexedDB 模式 (无限容量)' : 'IndexedDB Mode (Unlimited)'}
+                  active={storageMode === 'browser'}
+                  onClick={handleSwitchToLocalStorage}
+                />
+                {storageMode === 'browser' && storageStats && (
+                  <div className="px-3 mb-2">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className={`text-[9px] font-bold ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                        {language === 'cn' ? '存储空间已用' : 'Storage Used'}
+                      </span>
+                      <span className={`text-[9px] font-bold ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
+                        {(storageStats.usage / 1024 / 1024).toFixed(1)}MB / {(storageStats.quota / 1024 / 1024 / 1024).toFixed(1)}GB
+                      </span>
+                    </div>
+                    <div className={`h-1 w-full rounded-full overflow-hidden ${isDarkMode ? 'bg-white/5' : 'bg-gray-100'}`}>
+                      <div 
+                        className="h-full bg-orange-500/50 transition-all duration-500" 
+                        style={{ width: `${Math.max(1, storageStats.percent)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                <SettingItem 
+                  icon={FolderOpen} 
+                  label={language === 'cn' ? '本地文件夹' : 'Local Folder'} 
+                  description={storageMode === 'folder' && directoryHandle ? `路径: /${directoryHandle.name}` : (language === 'cn' ? '自动保存到本地文件夹' : 'Auto-save to local folder')}
+                  active={storageMode === 'folder'}
+                  onClick={handleSelectDirectory}
+                />
+              </div>
             </SettingSection>
 
             <SettingSection title={language === 'cn' ? '模版管理' : 'Templates'}>

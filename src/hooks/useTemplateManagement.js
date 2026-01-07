@@ -136,10 +136,12 @@ export const useTemplateManagement = (
   // 开始编辑
   const handleStartEditing = useCallback(() => {
     setIsEditing(true);
+    // 仅初始化临时变量，不设置 editingTemplateNameId (避免某些自动聚焦逻辑)
     if (activeTemplate) {
-      startRenamingTemplate(activeTemplate);
+      setTempTemplateName(typeof activeTemplate.name === 'string' ? activeTemplate.name : activeTemplate.name[language]);
+      setTempTemplateAuthor(activeTemplate.author || "");
     }
-  }, [setIsEditing, activeTemplate, startRenamingTemplate]);
+  }, [setIsEditing, activeTemplate, setTempTemplateName, setTempTemplateAuthor, language]);
 
   // 停止编辑
   const handleStopEditing = useCallback(() => {

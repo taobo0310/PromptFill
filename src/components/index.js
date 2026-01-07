@@ -7,6 +7,7 @@ export { PremiumButton } from './PremiumButton';
 export { EditorToolbar } from './EditorToolbar';
 export { Lightbox } from './Lightbox';
 export { TemplatePreview } from './TemplatePreview';
+export { TemplateEditor } from './TemplateEditor';
 export { TemplatesSidebar } from './TemplatesSidebar';
 export { BanksSidebar, CategoryManager, InsertVariableModal, AddBankModal } from './BanksSidebar';
 export { DiscoveryView } from './DiscoveryView';

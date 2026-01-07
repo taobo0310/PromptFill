@@ -8,7 +8,7 @@ import { PremiumButton } from './PremiumButton';
 /**
  * 组件：词库分类块
  */
-const CategorySection = ({ catId, categories, banks, onInsert, onDeleteOption, onAddOption, onDeleteBank, onUpdateBankCategory, onStartAddBank, t, language, onTouchDragStart, isDarkMode, bankSearchQuery }) => {
+const CategorySection = ({ catId, categories, banks, onInsert, onDeleteOption, onAddOption, onUpdateOption, onDeleteBank, onUpdateBankCategory, onStartAddBank, t, language, onTouchDragStart, isDarkMode, bankSearchQuery }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const category = categories[catId];
   
@@ -63,6 +63,7 @@ const CategorySection = ({ catId, categories, banks, onInsert, onDeleteOption, o
                         onInsert={onInsert}
                         onDeleteOption={onDeleteOption}
                         onAddOption={onAddOption}
+                        onUpdateOption={onUpdateOption}
                         onDeleteBank={onDeleteBank}
                         onUpdateBankCategory={onUpdateBankCategory}
                         categories={categories}
@@ -94,9 +95,11 @@ const CategorySection = ({ catId, categories, banks, onInsert, onDeleteOption, o
 /**
  * 组件：可折叠的词库组
  */
-const BankGroup = ({ bankKey, bank, onInsert, onDeleteOption, onAddOption, onDeleteBank, onUpdateBankCategory, categories, t, language, onTouchDragStart, isDarkMode, bankSearchQuery }) => {
+const BankGroup = ({ bankKey, bank, onInsert, onDeleteOption, onAddOption, onUpdateOption, onDeleteBank, onUpdateBankCategory, categories, t, language, onTouchDragStart, isDarkMode, bankSearchQuery }) => {
     const [isCollapsed, setIsCollapsed] = useState(true);
     const [isEditingCategory, setIsEditingCategory] = useState(false);
+    const [editingOptionIdx, setEditingOptionIdx] = useState(null);
+    const [tempOptionVal, setTempOptionVal] = useState("");
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
     // 如果有搜索词，且搜索词匹配到了词库名称或选项，则默认展开
@@ -242,17 +245,65 @@ const BankGroup = ({ bankKey, bank, onInsert, onDeleteOption, onAddOption, onDel
                         )}
 
                         <div className="flex flex-col gap-1.5 mb-4">
-                            {filteredOptions.map((opt, idx) => (
-                                <div key={idx} className={`group/opt flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-[14px] font-semibold transition-all duration-200 ${isDarkMode ? 'bg-transparent hover:bg-white/5 text-gray-400 hover:text-gray-200' : 'bg-transparent hover:bg-white/60 text-gray-700 hover:text-gray-900'}`}>
-                                    <span className="truncate select-text" title={getLocalized(opt, language)}>{getLocalized(opt, language)}</span>
-                                    <button 
-                                        onClick={() => onDeleteOption(bankKey, opt)}
-                                        className="opacity-0 group-hover/opt:opacity-100 text-gray-400 hover:text-red-500 p-1 rounded-lg transition-all flex-shrink-0"
-                                    >
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            ))}
+                            {filteredOptions.map((opt, idx) => {
+                                const isEditing = editingOptionIdx === idx;
+                                const optLabel = getLocalized(opt, language);
+
+                                return (
+                                    <div key={idx} className={`group/opt flex items-center justify-between gap-2 px-3.5 py-2 rounded-xl text-[14px] font-semibold transition-all duration-200 ${isDarkMode ? 'bg-transparent hover:bg-white/5 text-gray-400 hover:text-gray-200' : 'bg-transparent hover:bg-white/60 text-gray-700 hover:text-gray-900'} ${isEditing ? (isDarkMode ? 'bg-white/5 ring-1 ring-orange-500/50' : 'bg-white ring-1 ring-orange-500/30 shadow-sm') : ''}`}>
+                                        {isEditing ? (
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                value={tempOptionVal}
+                                                onChange={(e) => setTempOptionVal(e.target.value)}
+                                                onBlur={() => {
+                                                    if (tempOptionVal.trim() && tempOptionVal !== optLabel) {
+                                                        onUpdateOption(bankKey, opt, tempOptionVal.trim());
+                                                    }
+                                                    setEditingOptionIdx(null);
+                                                }}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        if (tempOptionVal.trim() && tempOptionVal !== optLabel) {
+                                                            onUpdateOption(bankKey, opt, tempOptionVal.trim());
+                                                        }
+                                                        setEditingOptionIdx(null);
+                                                    } else if (e.key === 'Escape') {
+                                                        setEditingOptionIdx(null);
+                                                    }
+                                                }}
+                                                className={`flex-1 bg-transparent border-none outline-none py-1 text-[14px] font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}
+                                            />
+                                        ) : (
+                                            <span className="truncate select-text flex-1 py-1" title={optLabel}>{optLabel}</span>
+                                        )}
+                                        
+                                        <div className="flex items-center gap-1">
+                                            {!isEditing && (
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditingOptionIdx(idx);
+                                                        setTempOptionVal(optLabel);
+                                                    }}
+                                                    className="opacity-0 group-hover/opt:opacity-100 text-gray-400 hover:text-orange-500 p-1.5 rounded-lg transition-all flex-shrink-0"
+                                                    title={t('edit')}
+                                                >
+                                                    <Pencil size={13} />
+                                                </button>
+                                            )}
+                                            <button 
+                                                onClick={() => onDeleteOption(bankKey, opt)}
+                                                className="opacity-0 group-hover/opt:opacity-100 text-gray-400 hover:text-red-500 p-1.5 rounded-lg transition-all flex-shrink-0"
+                                                title={t('delete')}
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         <div className="flex gap-2">
@@ -594,6 +645,7 @@ export const BanksSidebar = React.memo(({
   insertVariableToTemplate, 
   handleDeleteOption, 
   handleAddOption, 
+  handleUpdateOption,
   handleDeleteBank, 
   handleUpdateBankCategory, 
   handleStartAddBank, 
@@ -682,6 +734,7 @@ export const BanksSidebar = React.memo(({
                         onInsert={insertVariableToTemplate}
                         onDeleteOption={handleDeleteOption}
                         onAddOption={handleAddOption}
+                        onUpdateOption={handleUpdateOption}
                         onDeleteBank={handleDeleteBank}
                         onUpdateBankCategory={handleUpdateBankCategory}
                         onStartAddBank={handleStartAddBank}
@@ -703,6 +756,7 @@ export const BanksSidebar = React.memo(({
                         onInsert={insertVariableToTemplate}
                         onDeleteOption={handleDeleteOption}
                         onAddOption={handleAddOption}
+                        onUpdateOption={handleUpdateOption}
                         onDeleteBank={handleDeleteBank}
                         onUpdateBankCategory={handleUpdateBankCategory}
                         onStartAddBank={handleStartAddBank}

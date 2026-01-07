@@ -906,6 +906,26 @@ export const INITIAL_BANKS = {
       { cn: "办公：笔记本电脑、键盘轴体、鼠标、手绘板", en: "Office: Laptop, keyboard switches, mouse, drawing tablet" }
     ]
   },
+  underwater_color: {
+    label: { cn: "水下色调", en: "Underwater Color" },
+    category: "location",
+    options: [
+      { cn: "深青色透明水下", en: "deep teal transparent underwater" },
+      { cn: "晶莹剔透的浅蓝色", en: "crystal clear light blue" },
+      { cn: "神秘的深海蓝", en: "mysterious deep sea blue" },
+      { cn: "梦幻的翡翠绿", en: "dreamy emerald green" }
+    ]
+  },
+  creatures: {
+    label: { cn: "伴随生物", en: "Creatures" },
+    category: "character",
+    options: [
+      { cn: "许多银色小鱼", en: "many small silver fish" },
+      { cn: "发光的水母", en: "glowing jellyfish" },
+      { cn: "五彩斑斓的热带鱼", en: "colorful tropical fish" },
+      { cn: "巨大的蓝鲸(背景)", en: "a giant blue whale in the background" }
+    ]
+  },
   luxury_hobby_items: {
     label: { cn: "个人爱好/奢华", en: "Hobby & Luxury" },
     category: "item",
@@ -992,6 +1012,8 @@ export const INITIAL_DEFAULTS = {
   beauty_items: { cn: "彩妆：口红（带切面）、眼影盘、粉饼、腮红刷", en: "Makeup: Lipstick (cut), eyeshadow palette, compact, blush brush" },
   digital_items: { cn: "手机拆解：手机壳、屏幕内容、摄像头模组、主板组件", en: "Phone: Case, screen content, camera module, motherboard" },
   luxury_hobby_items: { cn: "珠宝：项链、耳环、戒指（宝石带色散效果）", en: "Jewelry: Necklace, earrings, ring (gemstone dispersion)" },
+  underwater_color: { cn: "深青色透明水下", en: "deep teal transparent underwater" },
+  creatures: { cn: "许多银色小鱼", en: "many small silver fish" },
   city_name: { cn: "京都", en: "Kyoto" },
   art_tool: { cn: "毛笔", en: "Ink Brush" },
   dominant_colors: { cn: "传统的京都红与古朴的墨黑色", en: "Traditional Kyoto red and antique ink black" },

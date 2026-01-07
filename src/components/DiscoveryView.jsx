@@ -83,17 +83,21 @@ export const DiscoveryView = React.memo(({
   if (isMobile) {
     // ... 保持移动端逻辑不变
     return (
-      <div
+      <main
         className={`fixed inset-0 z-10 flex flex-col overflow-y-auto pb-32 md:pb-20 ${isDarkMode ? 'dark-gradient-bg' : 'mesh-gradient-bg'}`}
       >
-        <div className="flex flex-col w-full min-h-full px-5 py-8 gap-6">
+        <div className="flex flex-col w-full min-h-full px-2 py-8 gap-6 pt-safe">
           {/* 1. 顶部 SVG 标题区域 */}
-          <div className="w-full flex justify-center px-4">
+          <div className="w-full flex flex-col items-center px-4 gap-2">
+            <h1 className="sr-only">提示词填空器 (Prompt Fill) - 专业的 AI 提示词管理与优化工具</h1>
             <img 
               src={isDarkMode ? "/Title_Dark.svg" : "/Title.svg"} 
-              alt="Prompt Fill Logo" 
+              alt="提示词填空器 (Prompt Fill) - 专业的 AI 提示词管理与优化工具" 
               className="w-full max-w-[220px] h-auto"
             />
+            <p className={`text-[10px] opacity-70 text-center px-6 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              专业的 AI 提示词管理与优化工具，让提示词填充更高效
+            </p>
           </div>
 
           {/* 2. 动态文字区 */}
@@ -102,9 +106,9 @@ export const DiscoveryView = React.memo(({
           </div>
 
           {/* 3. 图像展示（两列瀑布流） */}
-          <div className="columns-2 gap-1 mt-2">
+          <section className="columns-2 gap-1 mt-2">
             {filteredTemplates.map(t_item => (
-              <div 
+              <article 
                 key={t_item.id}
                 onClick={() => {
                   if (t_item.imageUrl) {
@@ -135,16 +139,16 @@ export const DiscoveryView = React.memo(({
                     <h3 className="text-white font-bold text-[10px] truncate">{getLocalized(t_item.name, language)}</h3>
                   </div>
                 </div>
-              </div>
+              </article>
             ))}
-          </div>
+          </section>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div 
+    <main 
       className="flex-1 flex items-stretch gap-4 overflow-hidden"
     >
       {/* Middle Side: Categories Sidebar (Desktop Only) - 注释掉，之后版本启用 */}
@@ -235,21 +239,25 @@ export const DiscoveryView = React.memo(({
       >
           <div className="flex-1 flex flex-col lg:flex-row gap-6 lg:gap-8 xl:gap-12 overflow-hidden pb-4 lg:pb-8 pt-0 px-2 lg:px-6">
               {/* Left Side: Logo & Slogan */}
-              <div className="flex flex-col justify-center items-center lg:w-[280px] xl:w-[320px] flex-shrink-0 px-4 lg:pl-6 lg:pr-2 gap-6">
-                  <div className="w-full max-w-[320px] scale-75 sm:scale-85 lg:scale-90 xl:scale-100 origin-center">
+              <header className="flex flex-col justify-center items-center lg:items-start lg:w-[280px] xl:w-[320px] flex-shrink-0 px-4 lg:pl-6 lg:pr-2 gap-6">
+                  <div className="w-full max-w-[320px] scale-75 sm:scale-85 lg:scale-90 xl:scale-100 origin-center lg:origin-left flex flex-col gap-3">
+                      <h1 className="sr-only">提示词填空器 (Prompt Fill) - 专业的 AI 提示词管理与优化工具</h1>
                       <img 
                           src={isDarkMode ? "/Title_Dark.svg" : "/Title.svg"} 
-                          alt="Prompt Fill Logo" 
+                          alt="提示词填空器 (Prompt Fill) - 专业的 AI 提示词管理与优化工具" 
                           className="w-full h-auto"
                       />
+                      <p className={`text-xs lg:text-sm font-medium leading-relaxed opacity-80 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        提示词填空器 (Prompt Fill) 是一款专业的 AI 提示词管理工具，支持模版化、变量填充及一键优化。
+                      </p>
                   </div>
                   <div className="w-full scale-90 lg:scale-95 xl:scale-100 origin-center lg:origin-left">
                     <AnimatedSlogan isActive={isSloganActive} language={language} isDarkMode={isDarkMode} />
                   </div>
-              </div>
+              </header>
 
               {/* Right Side: Waterfall Grid */}
-              <div 
+              <section 
                   ref={posterScrollRef}
                   className="flex-1 overflow-y-auto overflow-x-visible pr-2 lg:pr-4 scroll-smooth poster-scrollbar will-change-scroll"
                   onMouseEnter={() => setIsPosterAutoScrollPaused(true)}
@@ -262,7 +270,7 @@ export const DiscoveryView = React.memo(({
                                   {filteredTemplates
                                       .filter((_, index) => index % columnCount === colIndex)
                                       .map(t_item => (
-                                          <div 
+                                          <article 
                                               key={t_item.id}
                                               onClick={() => {
                                                   if (t_item.imageUrl) {
@@ -272,7 +280,7 @@ export const DiscoveryView = React.memo(({
                                                       setDiscoveryView(false);
                                                   }
                                               }}
-                                              className={`cursor-pointer group transition-shadow duration-300 relative overflow-hidden rounded-xl isolate border-2 hover:shadow-[0_0_25px_rgba(251,146,60,0.6)] will-change-transform ${isDarkMode ? 'border-white/10' : 'border-white'}`}
+                                              className={`cursor-pointer group transition-shadow duration-300 relative overflow-hidden rounded-xl isolate border-2 hover:shadow-[0_0_15px_rgba(251,146,60,0.35)] will-change-transform ${isDarkMode ? 'border-white/10' : 'border-white'}`}
                                           >
                                               <div className={`relative w-full overflow-hidden rounded-lg ${isDarkMode ? 'bg-[#2A2726]' : 'bg-gray-100'}`} style={{ transform: 'translateZ(0)' }}>
                                                   {t_item.imageUrl ? (
@@ -292,23 +300,23 @@ export const DiscoveryView = React.memo(({
                                               {/* Hover Overlay: Bottom Glass Mask */}
                                               <div className="absolute inset-x-0 bottom-0 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-[opacity,transform] duration-500 ease-out z-20 rounded-b-xl overflow-hidden">
                                                   <div className={`backdrop-blur-md border-t py-4 px-6 shadow-2xl rounded-b-xl ${isDarkMode ? 'bg-black/60 border-white/10' : 'bg-white/40 border-white/40'}`}>
-                                                      <p className={`font-bold text-base leading-snug text-center ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                                                      <h3 className={`font-bold text-base leading-snug text-center ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                                                           {getLocalized(t_item.name, language)}
-                                                      </p>
+                                                      </h3>
                                                   </div>
                                               </div>
                                           </div>
-                                      </div>
+                                      </article>
                                   ))}
                               </div>
                           ))}
                       </div>
                   </div>
-              </div>
+              </section>
           </div>
 
           {/* Bottom Bar: Trigger on Left, Author Info on Right */}
-          <div className="mt-auto flex items-center justify-between px-8 py-6 relative z-20">
+          <footer className="mt-auto flex items-center justify-between px-8 py-6 relative z-20">
               {/* New Year Firework Trigger (Desktop/Mobile unified position) */}
               {FEATURE_FLAGS.ENABLE_NEW_YEAR_FIREWORKS ? (
                 <button
@@ -319,7 +327,7 @@ export const DiscoveryView = React.memo(({
                   className="transition-all duration-300 transform hover:scale-110 active:scale-95 outline-none"
                   title="新年烟花秀"
                 >
-                  <img src="/2026.png" alt="2026" className="h-10 md:h-12 w-auto" />
+                  <img src="/2026.png" alt="2026 烟花秀" className="h-10 md:h-12 w-auto" />
                 </button>
               ) : <div />}
 
@@ -342,7 +350,7 @@ export const DiscoveryView = React.memo(({
                       </a>
                   </div>
               </div>
-          </div>
+          </footer>
       </div>
       <FireworkEffect 
         ref={fireworkRef} 
@@ -351,7 +359,7 @@ export const DiscoveryView = React.memo(({
           if (setThemeMode) setThemeMode('dark');
         }}
       />
-    </div>
+    </main>
   );
 });
 

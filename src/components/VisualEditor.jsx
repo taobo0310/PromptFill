@@ -79,7 +79,7 @@ export const VisualEditor = React.forwardRef(({
     return (
       <div 
         ref={containerRef}
-        className={`w-full h-full overflow-y-auto overflow-x-hidden flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-[#181716]' : 'bg-white'}`}
+        className={`w-full h-full overflow-y-auto overflow-x-hidden flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-[#2A2928]' : 'bg-white'}`}
       >
         {/* Mobile Header in Scrollable Area */}
         <div className="px-6 pt-10 pb-6 shrink-0">
@@ -129,7 +129,7 @@ export const VisualEditor = React.forwardRef(({
 
   // 桌面端布局保持原样
   return (
-    <div className={`relative w-full h-full overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-black/20' : 'bg-gray-50'}`}>
+    <div className={`relative w-full h-full overflow-hidden transition-colors duration-300 bg-transparent`}>
       {/* Backdrop */}
       <pre
         ref={preRef}

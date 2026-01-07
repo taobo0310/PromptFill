@@ -9,6 +9,7 @@ export const PremiumButton = ({
   disabled = false, 
   title, 
   icon: Icon, 
+  iconSize = 16,
   isDarkMode = false,
   justify = "center"
 }) => {
@@ -18,6 +19,7 @@ export const PremiumButton = ({
       disabled={disabled}
       className={`
         premium-button-outer 
+        m-0 p-1
         ${isDarkMode ? 'dark' : 'light'} 
         ${active ? 'is-active' : ''}
         ${className.includes('size-lg') ? 'size-lg' : ''}
@@ -32,8 +34,10 @@ export const PremiumButton = ({
         ${active ? 'is-active' : ''}
         ${className.includes('size-lg') ? 'size-lg' : ''}
         ${justify === 'start' ? '!justify-start !px-6' : ''}
+        ${className.includes('rounded-2xl') ? '!rounded-[12px]' : ''}
+        ${className.includes('rounded-xl') ? '!rounded-[8px]' : ''}
       `}>
-        {Icon && <Icon size={16} className={active ? 'text-white' : (isDarkMode ? 'text-gray-400' : 'text-gray-600')} />}
+        {Icon && <Icon size={iconSize} className={active ? 'text-white' : (isDarkMode ? 'text-gray-400' : 'text-gray-600')} />}
         {children && <span className={active ? 'text-white' : (isDarkMode ? 'text-gray-400' : 'text-gray-600')}>{children}</span>}
       </div>
     </button>

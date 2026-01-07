@@ -68,13 +68,13 @@ body {
 }
 
 .premium-toggle-container.light {
-  background: #CDCDCD padding-box,
+  background: linear-gradient(#E8E3DD, #E8E3DD) padding-box,
               linear-gradient(0deg, #FFFFFF 0%, rgba(255, 255, 255, 0) 100%) border-box;
   box-shadow: inset 0px 2px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
 .premium-toggle-container.dark {
-  background: #252525 padding-box,
+  background: linear-gradient(#252525, #252525) padding-box,
               linear-gradient(0deg, #646464 0%, rgba(0, 0, 0, 0) 100%) border-box;
   box-shadow: inset 0px 2px 4px 0px rgba(0, 0, 0, 0.3);
 }
@@ -132,13 +132,13 @@ body {
 }
 
 .premium-search-container.light {
-  background: #DED8D0 padding-box,
+  background: linear-gradient(#E8E3DD, #E8E3DD) padding-box,
               linear-gradient(0deg, #FFFFFF 0%, rgba(255, 255, 255, 0) 100%) border-box;
   box-shadow: inset 0px 2px 4px 0px rgba(0, 0, 0, 0.3);
 }
 
 .premium-search-container.dark {
-  background: #1E1E1E padding-box,
+  background: linear-gradient(#252525, #252525) padding-box,
               linear-gradient(0deg, #646464 0%, rgba(0, 0, 0, 0) 100%) border-box;
   box-shadow: inset 0px 2px 4px 0px rgba(0, 0, 0, 0.3);
 }
@@ -293,6 +293,18 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
 /* iOS smooth scrolling for content area */
 .content-scroll-area {
   -webkit-overflow-scrolling: touch;
@@ -329,6 +341,16 @@ body {
   animation: pillFadeIn 0.4s ease-out forwards;
 }
 
+/* Skeleton loading animation */
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
 /* Premium Button Styles */
 .premium-button-outer {
   position: relative;
@@ -339,8 +361,12 @@ body {
   box-sizing: border-box;
   transition: all 0.3s ease;
   border: 1px solid transparent;
-  height: 42px;
+  min-height: 42px;
   flex-shrink: 0;
+  appearance: none;
+  background: none;
+  outline: none;
+  text-align: center;
 }
 
 .premium-button-outer.is-active {
@@ -348,7 +374,8 @@ body {
 }
 
 .premium-button-outer.size-lg {
-  height: 54px;
+  min-height: 54px;
+  border-radius: 14px;
 }
 
 .premium-button-inner {
@@ -362,24 +389,26 @@ body {
   gap: 8px;
   transition: all 0.3s ease;
   padding: 0 16px;
-  height: 34px;
+  min-height: 34px;
   font-size: 13px;
 }
 
-.premium-button-inner.size-lg {
-  height: 46px;
+.premium-button-outer.size-lg .premium-button-inner {
+  min-height: 46px;
+  border-radius: 10px;
 }
 
 /* Light Mode */
 .premium-button-outer.light {
-  background: linear-gradient(180deg, #FAFAFA 4%, #EBEBEB 100%) padding-box,
-              linear-gradient(0deg, #B8B8B8 4%, rgba(240, 211, 190, 0.48) 100%) border-box;
+  background: linear-gradient(#E8E3DD, #E8E3DD) padding-box,
+              linear-gradient(0deg, #FFFFFF 0%, rgba(255, 255, 255, 0) 100%) border-box;
+  box-shadow: inset 0px 1px 2px 0px rgba(0, 0, 0, 0.2);
 }
 
 .premium-button-inner.light {
   background: linear-gradient(180deg, #E7E7E7 9%, #E2E1E0 100%) padding-box,
               linear-gradient(0deg, #BFBFBF 0%, #FFFFFF 100%) border-box;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
 }
 
 .premium-button-outer.light:hover .premium-button-inner:not(.is-active) {
@@ -397,19 +426,21 @@ body {
 
 .premium-button-outer.light.is-active:hover {
   background: linear-gradient(180deg, #FFF0E7 0%, #DBC6BA 100%) padding-box,
-              linear-gradient(0deg, #B8B8B8 4%, rgba(240, 211, 190, 0.48) 100%) border-box;
+              linear-gradient(0deg, #FFFFFF 0%, rgba(255, 255, 255, 0) 100%) border-box;
+  box-shadow: inset 0px 1px 2px 0px rgba(0, 0, 0, 0.2);
 }
 
 /* Dark Mode */
 .premium-button-outer.dark {
-  background: linear-gradient(180deg, #474747 0%, rgba(43, 42, 42, 0.92) 98%) padding-box,
-              linear-gradient(0deg, #494949 5%, rgba(41, 41, 41, 0.75) 97%) border-box;
+  background: linear-gradient(#252525, #252525) padding-box,
+              linear-gradient(0deg, #646464 0%, rgba(0, 0, 0, 0) 100%) border-box;
+  box-shadow: inset 0px 1px 2px 0px rgba(0, 0, 0, 0.4);
 }
 
 .premium-button-inner.dark {
   background: linear-gradient(180deg, #393939 9%, #242424 100%) padding-box,
               linear-gradient(0deg, #1A1A1A 0%, #494949 96%) border-box;
-  border: 2px solid transparent;
+  border: 1px solid transparent;
   box-shadow: 0px 0px 1px 1px rgba(44, 41, 41, 0.51);
 }
 
@@ -428,5 +459,6 @@ body {
 
 .premium-button-outer.dark.is-active:hover {
   background: linear-gradient(180deg, #5A524E 0%, #3D3937 100%) padding-box,
-              linear-gradient(0deg, #494949 5%, rgba(41, 41, 41, 0.75) 97%) border-box;
+              linear-gradient(0deg, #646464 0%, rgba(0, 0, 0, 0) 100%) border-box;
+  box-shadow: inset 0px 2px 4px 0px rgba(0, 0, 0, 0.3);
 }

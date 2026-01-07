@@ -261,7 +261,9 @@ const ImagePreviewModal = React.memo(({
                           ))}
                         </div>
                       </div>
-                      <button
+                      <PremiumButton
+                        active={true}
+                        isDarkMode={isDarkMode}
                         onClick={(e) => {
                           e.stopPropagation();
                           if (template) {
@@ -271,11 +273,10 @@ const ImagePreviewModal = React.memo(({
                             setZoomedImage(null);
                           }
                         }}
-                        className="px-5 py-2.5 bg-gradient-to-br from-orange-400 to-orange-600 text-white rounded-xl font-bold text-sm shadow-[0_4px_15px_rgba(249,115,22,0.3)] active:scale-95 transition-all flex items-center gap-2 flex-shrink-0 border border-orange-400/20"
+                        className="!h-auto !min-h-[42px] !rounded-xl shadow-[0_4px_15px_rgba(249,115,22,0.3)] active:scale-95 transition-all flex-shrink-0"
                       >
-                        <Sparkles size={16} />
-                        {t('use_template')}
-                      </button>
+                        <span className="font-bold text-sm px-2">{t('use_template')}</span>
+                      </PremiumButton>
                   </div>
 
                   {/* Content Area */}
@@ -429,12 +430,11 @@ const ImagePreviewModal = React.memo(({
                                     setDiscoveryView(false);
                                     setZoomedImage(null);
                                 }}
-                                icon={Sparkles}
                                 active={true}
                                 isDarkMode={true}
-                                className="w-full !min-h-[56px] !rounded-2xl"
+                                className="w-full !h-auto !min-h-[56px] !rounded-2xl"
                             >
-                                <span className="text-lg">{t('use_template') || '使用此模板'}</span>
+                                <span className="text-lg px-4">{t('use_template') || '使用此模板'}</span>
                             </PremiumButton>
 
                             <div className="flex items-center justify-between px-2">

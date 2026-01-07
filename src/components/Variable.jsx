@@ -1,28 +1,57 @@
 // Variable 组件 - 可点击的变量词
-import React, { useState, useEffect } from 'react';
-import { Check, Plus, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Check, Plus, X, Loader2 } from 'lucide-react';
 import { CATEGORY_STYLES, PREMIUM_STYLES } from '../constants/styles';
 import { getLocalized } from '../utils/helpers';
+import { AtomIcon } from './icons/AtomIcon';
+import { RefreshIcon } from './icons/RefreshIcon';
+import {
+  AI_FEATURE_ENABLED,
+  AI_BUTTON_TEXT,
+  AI_LOADING_TEXT,
+  AI_ERROR_MESSAGES,
+  AI_SECTION_TITLE,
+  LOCAL_SECTION_TITLE,
+  AI_GENERATION_COUNT
+} from '../constants/aiConfig';
 
-export const Variable = ({ 
-  id, 
-  index, 
-  config, 
-  currentVal, 
-  isOpen, 
-  onToggle, 
-  onSelect, 
-  onAddCustom, 
-  popoverRef, 
-  categories, 
+export const Variable = ({
+  id,
+  index,
+  config,
+  currentVal,
+  isOpen,
+  onToggle,
+  onSelect,
+  onAddCustom,
+  popoverRef,
+  categories,
   t,
   language,
   isDarkMode,
-  groupId = null  // 新增：分组ID，用于显示分组标识
+  groupId = null,  // 新增：分组ID，用于显示分组标识
+  // AI 相关 props（预留接口）
+  onGenerateAITerms = null,  // AI 生成词条的回调函数
+  templateContext = "", // 新增：模版全文内容
 }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [customVal, setCustomVal] = useState("");
   const [isHovered, setIsHovered] = useState(false);
+  const [alignRight, setAlignRight] = useState(false);
+  const [alignTop, setAlignTop] = useState(false);
+  const [maxPopoverWidth, setMaxPopoverWidth] = useState('95vw');
+  const [isMobile, setIsMobile] = useState(false);
+  const containerRef = useRef(null);
+
+  // AI 相关状态
+  const [aiTerms, setAiTerms] = useState([]);  // AI 生成的词条
+  const [isAILoading, setIsAILoading] = useState(false);  // AI 加载状态
+  const [aiError, setAiError] = useState(null);  // AI 错误信息
+  const [visibleAiTermsCount, setVisibleAiTermsCount] = useState(0); // 新增：可见的 AI 词条数量，用于逐个显示效果
+  const [hasGeneratedOnce, setHasGeneratedOnce] = useState(false); // 新增：是否已经生成过词条
+
+  //文字渐变色
+  const TEXT_GRADIENT = 'linear-gradient(90deg, #F77F56 0%, rgba(255, 71, 20, 0.97) 100%)';
 
   // Determine styles based on category
   const categoryId = config?.category || 'other';
@@ -30,13 +59,142 @@ export const Variable = ({
   const style = CATEGORY_STYLES[colorKey] || CATEGORY_STYLES.slate;
   const premium = PREMIUM_STYLES[colorKey] || PREMIUM_STYLES.slate;
 
-  // Reset state when popover closes
+  // Reset state and determine alignment when popover opens/closes
   useEffect(() => {
+    const updatePosition = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      
+      if (!isOpen || !containerRef.current) return;
+      
+      if (mobile) {
+        // 移动端：居中显示，最大宽度为屏幕宽度减去边距
+        setMaxPopoverWidth(`${window.innerWidth - 32}px`);
+        return;
+      }
+
+      // 桌面端定位逻辑
+      const rect = containerRef.current.getBoundingClientRect();
+      const vWidth = window.innerWidth;
+      const vHeight = window.innerHeight;
+      
+      const popoverWidth = 320; 
+      const estimatedPopoverHeight = 480; 
+      
+      // 1. 水平定位：
+      const wouldOverflowRight = rect.left + popoverWidth > vWidth - 20;
+      const wouldOverflowLeftIfRightAligned = rect.right - popoverWidth < 20;
+      const isInRightHalf = rect.left > vWidth / 2;
+      
+      if (wouldOverflowRight && !wouldOverflowLeftIfRightAligned) {
+        // 如果右边放不下，且左边放得下，则右对齐
+        setAlignRight(true);
+      } else if (isInRightHalf && !wouldOverflowLeftIfRightAligned) {
+        // 习惯性：如果在右半边且左边放得下，则右对齐
+        setAlignRight(true);
+      } else {
+        // 否则左对齐
+        setAlignRight(false);
+      }
+
+      // 2. 垂直定位：
+      // 检查按钮下方到屏幕底部的距离
+      const spaceBelow = vHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      
+      // 如果下方空间不足且上方空间更大，则向上弹出
+      if (spaceBelow < estimatedPopoverHeight && spaceAbove > spaceBelow) {
+        setAlignTop(true);
+      } else {
+        setAlignTop(false);
+      }
+
+      // 动态计算最大宽度，防止在窄屏下超出屏幕
+      setMaxPopoverWidth(`${Math.min(vWidth - 32, 320)}px`);
+    };
+
     if (!isOpen) {
       setIsAdding(false);
       setCustomVal("");
+      // 关闭弹窗时重置 AI 逐个显示的计数，但不重置词条本身，除非用户希望每次打开都重新生成（目前保持现状）
+      setVisibleAiTermsCount(aiTerms.length); 
+    } else {
+      updatePosition();
+      // 监听滚动和调整大小，实时更新位置（对于桌面端很重要）
+      window.addEventListener('resize', updatePosition);
+      return () => window.removeEventListener('resize', updatePosition);
     }
-  }, [isOpen]);
+  }, [isOpen, aiTerms.length]);
+
+  // 处理 AI 生成词条
+  const handleGenerateAITerms = async () => {
+    // 检查功能开关
+    if (!AI_FEATURE_ENABLED) {
+      console.warn('[AI] AI feature is disabled');
+      return;
+    }
+
+    // 检查是否有生成回调
+    if (!onGenerateAITerms) {
+      setAiError(AI_ERROR_MESSAGES.NO_API_KEY[language] || 'No AI handler');
+      return;
+    }
+
+    setIsAILoading(true);
+    setAiError(null);
+    setAiTerms([]); // 清空旧词条
+    setVisibleAiTermsCount(0); // 重置可见计数
+
+    try {
+      // 调用父组件传入的 AI 生成函数
+      const result = await onGenerateAITerms({
+        variableId: id,
+        variableLabel: getLocalized(config?.label, language),
+        language: language,
+        currentValue: getLocalized(currentVal, language),
+        localOptions: config?.options || [], // 传递本地选项
+        templateContext: templateContext, // 传递模版全文
+        count: AI_GENERATION_COUNT.DEFAULT
+      });
+
+      if (result && result.length > 0) {
+        setAiTerms(result);
+        setHasGeneratedOnce(true);
+        
+        // 模拟逐个呈现的效果
+        let count = 0;
+        const interval = setInterval(() => {
+          count++;
+          setVisibleAiTermsCount(count);
+          if (count >= result.length) {
+            clearInterval(interval);
+          }
+        }, 150); // 每 150ms 显示一个
+      } else {
+        setAiError(AI_ERROR_MESSAGES.GENERATION_FAILED[language] || 'Generation failed');
+      }
+    } catch (error) {
+      console.error('[AI] Generation error:', error);
+      setAiError(AI_ERROR_MESSAGES.NETWORK_ERROR[language] || 'Network error');
+    } finally {
+      setIsAILoading(false);
+    }
+  };
+
+  const [isAiButtonHovered, setIsAiButtonHovered] = useState(false);
+  const atomIconRef = useRef(null);
+  const refreshIconRef = useRef(null);
+
+  // 当按钮 Hover 状态变化时，触发图标动画
+  useEffect(() => {
+    if (isAiButtonHovered) {
+      atomIconRef.current?.startAnimation();
+      refreshIconRef.current?.startAnimation();
+    } else {
+      atomIconRef.current?.stopAnimation();
+      refreshIconRef.current?.stopAnimation();
+    }
+  }, [isAiButtonHovered, hasGeneratedOnce, isAILoading]);
 
   if (!config) {
     return (
@@ -73,7 +231,7 @@ export const Variable = ({
   };
 
   return (
-    <div className="relative inline-block mx-1.5 align-baseline group text-base">
+    <div ref={containerRef} className={`relative inline-block mx-1.5 align-baseline group text-base ${isOpen ? 'z-[600]' : 'z-auto'}`}>
       <span 
         data-export-pill="true"
         onClick={onToggle}
@@ -112,87 +270,247 @@ export const Variable = ({
       
       {/* Popover - 词库选择器 */}
       {isOpen && (
-        <div 
-          ref={popoverRef}
-          className="absolute left-0 top-full mt-2 w-72 rounded-xl shadow-2xl z-50 overflow-hidden flex flex-col text-left animate-in fade-in zoom-in-95 duration-200 origin-top-left"
-          style={{ 
-            minWidth: '280px',
-            backdropFilter: 'blur(20px)',
-            backgroundColor: isDarkMode ? 'rgba(36, 33, 32, 0.95)' : 'rgba(255, 255, 255, 0.85)',
-            border: isDarkMode ? '1px solid rgba(255, 255, 255, 0.05)' : '1px solid rgba(255, 255, 255, 0.5)',
-            boxShadow: isDarkMode 
-              ? `0 10px 40px -10px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.05)`
-              : `0 10px 40px -10px ${premium.shadowColor}, 0 0 0 1px rgba(0,0,0,0.05)`
-          }}
-        >
-          <div className={`px-4 py-3 border-b flex justify-between items-center backdrop-blur-sm ${isDarkMode ? 'border-white/5 bg-black/20' : 'border-gray-100/50 bg-white/50'}`}>
-            <span className={`text-xs font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
-              {t('select')} {getLocalized(config.label, language)}
+        <>
+          {/* 移动端遮罩层 */}
+          {isMobile && (
+            <div 
+              className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[590] animate-in fade-in duration-200"
+              onClick={onToggle}
+            />
+          )}
+          
+          <div
+            ref={popoverRef}
+            className={`
+              ${isMobile ? 'fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90vw] max-h-[80vh]' : 'absolute'} 
+              ${!isMobile && alignRight ? 'right-0' : 'left-0'} 
+              ${!isMobile && alignTop ? 'bottom-full mb-3' : (!isMobile ? 'top-full mt-3' : '')} 
+              rounded-[28px] shadow-2xl z-[600] overflow-hidden flex flex-col text-left 
+              animate-in fade-in zoom-in-95 duration-200 
+              ${!isMobile ? (alignTop 
+                ? (alignRight ? 'origin-bottom-right' : 'origin-bottom-left') 
+                : (alignRight ? 'origin-top-right' : 'origin-top-left')) : 'origin-center'
+              }
+            `}
+            style={{
+              width: isMobile ? maxPopoverWidth : '320px',
+              maxWidth: maxPopoverWidth,
+              backdropFilter: 'blur(40px) saturate(180%)',
+              backgroundColor: isDarkMode ? 'rgba(36, 33, 32, 0.98)' : 'rgba(255, 255, 255, 0.95)',
+              border: isDarkMode ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.05)',
+              boxShadow: isDarkMode
+                ? `0 20px 50px -12px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.08)`
+                : `0 20px 50px -12px ${premium.shadowColor}, 0 0 0 1px rgba(0,0,0,0.02)`
+            }}
+          >
+          {/* 1. 顶部：标题加标签 */}
+          <div className={`px-5 py-4 flex justify-between items-center ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+            <span className="text-[17px] font-bold tracking-tight">
+              {getLocalized(config.label, language)}
             </span>
-            <span 
-              className="text-[10px] px-2 py-0.5 rounded-full font-bold text-white shadow-sm"
+            <span
+              className={`text-[11px] px-3 py-1 rounded-full font-bold text-white shadow-sm flex items-center gap-1.5`}
               style={{ background: `linear-gradient(135deg, ${premium.from}, ${premium.to})` }}
             >
               {getLocalized(categories[categoryId]?.label, language) || categoryId}
             </span>
           </div>
-          
-          <div className="max-h-64 overflow-y-auto p-2 space-y-1 custom-scrollbar">
-            {config.options.length > 0 ? config.options.map((opt, idx) => (
-              <button
-                key={idx}
-                onClick={() => onSelect(opt)}
-                className={`w-full text-left px-3 py-2.5 rounded-lg text-sm transition-all duration-200 group flex items-center justify-between
-                  ${isSelected(opt) 
-                    ? (isDarkMode ? 'bg-orange-500/10 shadow-lg font-bold' : 'bg-white shadow-md ring-1 ring-black/5 font-bold') 
-                    : (isDarkMode ? 'hover:bg-white/5 text-gray-400 hover:text-white' : 'hover:bg-white/60 hover:shadow-sm text-gray-600 hover:text-gray-900')}`}
-                style={isSelected(opt) ? { color: premium.to } : {}}
-              >
-                <span>{getLocalized(opt, language)}</span>
-                {isSelected(opt) && <Check size={14} style={{ color: premium.to }} />}
-              </button>
-            )) : (
-              <div className="px-3 py-8 text-center text-gray-400 text-sm italic">
-                {t('no_options')}
+
+          {/* 2. 中部：词条区域 (圆角渐变框) */}
+          <div className="px-3 pb-2 flex-1 flex flex-col min-h-0">
+            <div 
+              className={`
+                flex-1 overflow-y-auto custom-scrollbar rounded-2xl flex flex-col
+                ${isDarkMode 
+                  ? 'border border-white/10' 
+                  : 'border border-gray-200/50'}
+              `}
+              style={{
+                maxHeight: '400px',
+                background: isDarkMode 
+                  ? 'linear-gradient(#252525, #252525) padding-box, linear-gradient(0deg, #646464 0%, rgba(0, 0, 0, 0) 100%) border-box'
+                  : 'linear-gradient(#E8E3DD, #E8E3DD) padding-box, linear-gradient(0deg, #FFFFFF 0%, rgba(255, 255, 255, 0) 100%) border-box',
+                boxShadow: 'inset 0px 2px 4px 0px rgba(0, 0, 0, 0.2)'
+              }}
+            >
+              {/* AI 智能词条部分 */}
+              {AI_FEATURE_ENABLED && (
+                <div className={`flex flex-col pt-1`}>
+                  <div className="px-4 py-3 flex items-center justify-between">
+                    <button
+                      onClick={handleGenerateAITerms}
+                      onMouseEnter={() => setIsAiButtonHovered(true)}
+                      onMouseLeave={() => setIsAiButtonHovered(false)}
+                      disabled={isAILoading}
+                      className="group relative flex items-center gap-1.5 transition-all duration-300"
+                    >
+                      <span 
+                        style={{
+                          fontVariationSettings: '"opsz" auto',
+                          fontFeatureSettings: '"kern" on',
+                          background: TEXT_GRADIENT,
+                          WebkitBackgroundClip: 'text',
+                          WebkitTextFillColor: 'transparent',
+                          backgroundClip: 'text',
+                          textFillColor: 'transparent',
+                          zIndex: 0,
+                        }}
+                        className={`text-[14px] font-bold tracking-tight transition-all duration-300 ${isAiButtonHovered ? 'scale-105' : ''}`}
+                      >
+                        {getLocalized(AI_SECTION_TITLE, language)}
+                      </span>
+                      {isAILoading ? (
+                        <Loader2 size={14} className="animate-spin text-orange-500" />
+                      ) : (
+                        hasGeneratedOnce ? (
+                          <RefreshIcon 
+                            ref={refreshIconRef}
+                            size={14} 
+                            className={`transition-all duration-500 ${isAiButtonHovered ? 'rotate-180 text-orange-500' : 'text-orange-400/50'}`} 
+                          />
+                        ) : (
+                          <AtomIcon 
+                            ref={atomIconRef}
+                            size={18} 
+                            className={`transition-all duration-500 ${isAiButtonHovered ? 'scale-110 text-orange-500' : 'text-orange-400/50'}`}
+                          />
+                        )
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="px-2 space-y-1">
+                    {/* AI 加载中的骨架屏效果 */}
+                    {isAILoading && (
+                      <div className="space-y-1">
+                        {[1, 2, 3].map((i) => (
+                          <div 
+                            key={`skeleton-${i}`}
+                            className={`w-full h-10 rounded-xl animate-pulse ${isDarkMode ? 'bg-white/5' : 'bg-white/60'}`}
+                          />
+                        ))}
+                      </div>
+                    )}
+
+                    {/* AI 错误显示 */}
+                    {aiError && !isAILoading && (
+                      <div className="px-3 py-4 text-center">
+                        <div className="text-red-400 text-xs mb-2">{aiError}</div>
+                        <button
+                          onClick={handleGenerateAITerms}
+                          className="text-[10px] text-blue-400 hover:text-blue-300 font-bold uppercase tracking-wider"
+                        >
+                          {language === 'cn' ? '重试' : 'Retry'}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* AI 结果逐个显示 */}
+                    {!isAILoading && aiTerms.length > 0 && (
+                      <div className="space-y-1">
+                        {aiTerms.slice(0, 5).map((term, idx) => (
+                          <button
+                            key={`ai-${idx}`}
+                            onClick={() => onSelect(term)}
+                            className={`
+                              w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-300 group flex items-center justify-between
+                              ${idx < visibleAiTermsCount ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}
+                              ${isSelected(term)
+                                ? (isDarkMode ? 'bg-orange-500/20 shadow-lg font-bold' : 'bg-white shadow-md font-bold')
+                                : (isDarkMode ? 'hover:bg-white/5 text-gray-300' : 'hover:bg-white/80 text-gray-600 hover:text-gray-900')}
+                            `}
+                            style={{ 
+                              transitionDelay: `${idx * 50}ms`,
+                            }}
+                          >
+                            <span 
+                              className="flex items-center"
+                              style={!isSelected(term) ? {
+                                background: TEXT_GRADIENT,
+                                WebkitBackgroundClip: 'text',
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text',
+                                textFillColor: 'transparent',
+                              } : { color: premium.to }}
+                            >
+                              {typeof term === 'string' ? term : getLocalized(term, language)}
+                            </span>
+                            {isSelected(term) && <Check size={14} style={{ color: premium.to }} />}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 本地词库部分 */}
+              <div className="flex flex-col mt-2">
+                <div className="px-2 space-y-1 pb-3">
+                  {config.options.length > 0 ? config.options.map((opt, idx) => (
+                    <button
+                      key={`local-${idx}`}
+                      onClick={() => onSelect(opt)}
+                      className={`w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all duration-200 group flex items-center justify-between
+                        ${isSelected(opt)
+                          ? (isDarkMode ? 'bg-orange-500/20 shadow-lg font-bold' : 'bg-white shadow-md font-bold')
+                          : (isDarkMode ? 'hover:bg-white/5 text-gray-400 hover:text-white' : 'hover:bg-white/80 text-gray-600 hover:text-gray-900')}`}
+                      style={isSelected(opt) ? { color: premium.to } : {}}
+                    >
+                      <span>{getLocalized(opt, language)}</span>
+                      {isSelected(opt) && <Check size={14} />}
+                    </button>
+                  )) : (
+                    <div className="px-3 py-8 text-center text-gray-400 text-sm italic">
+                      {t('no_options')}
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
-          
-          {/* Add Custom Option Footer */}
-          <div className={`p-2 border-t backdrop-blur-sm ${isDarkMode ? 'border-white/5 bg-black/20' : 'border-gray-100/50 bg-white/50'}`}>
+
+          {/* 3. 底部：添加自定义选项 */}
+          <div className={`px-4 pt-1 pb-4`}>
             {isAdding ? (
-              <div className="flex gap-2">
-                <input 
+              <div className="flex gap-2 animate-in slide-in-from-bottom-2 duration-200">
+                <input
                   autoFocus
                   type="text"
                   value={customVal}
                   onChange={(e) => setCustomVal(e.target.value)}
                   placeholder={t('add_option_placeholder')}
-                  className={`flex-1 min-w-0 px-3 py-1.5 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all ${isDarkMode ? 'bg-white/5 border-white/10 text-white' : 'border-gray-200 bg-white/80'}`}
+                  className={`flex-1 min-w-0 px-4 py-2.5 text-sm border rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all ${isDarkMode ? 'bg-white/5 border-white/10 text-white' : 'border-gray-200 bg-white shadow-sm'}`}
                   onKeyDown={(e) => e.key === 'Enter' && handleAddSubmit()}
                 />
-                <button 
+                <button
                   onClick={handleAddSubmit}
                   disabled={!customVal.trim()}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium disabled:opacity-50 transition-colors shadow-sm ${isDarkMode ? 'bg-orange-600 text-white hover:bg-orange-700' : 'bg-gray-900 text-white hover:bg-gray-800'}`}
+                  className={`px-5 py-2.5 rounded-xl text-xs font-bold disabled:opacity-50 transition-all shadow-lg ${isDarkMode ? 'bg-orange-600 text-white hover:bg-orange-700' : 'bg-gray-900 text-white hover:bg-gray-800'}`}
                 >
                   {t('confirm')}
                 </button>
               </div>
             ) : (
-              <button 
+              <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsAdding(true);
                 }}
-                className={`w-full flex items-center justify-center gap-1.5 px-3 py-2 text-xs transition-all font-medium rounded-lg border border-dashed ${isDarkMode ? 'text-gray-500 hover:text-orange-400 hover:bg-white/5 border-white/10 hover:border-orange-500/50' : 'text-gray-500 hover:text-orange-600 hover:bg-orange-50/50 border-gray-300 hover:border-orange-300'}`}
+                className={`
+                  w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] transition-all font-bold rounded-xl border border-dashed
+                  ${isDarkMode 
+                    ? 'text-gray-500 hover:text-orange-400 hover:bg-white/5 border-white/10 hover:border-orange-500/50' 
+                    : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50 border-gray-300 hover:border-gray-400 shadow-sm'}
+                `}
               >
-                <Plus size={12} /> {t('add_custom_option')}
+                <Plus size={14} /> {t('add_custom_option')}
               </button>
             )}
           </div>
         </div>
-      )}
+      </>
+    )}
     </div>
   );
 };

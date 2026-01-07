@@ -11,7 +11,7 @@
 A **structured prompt generation tool** designed specifically for AI painting (GPT, Midjourney, Nano Banana, etc.). Help users quickly build, manage, and iterate complex prompts through a visual "fill-in-the-blank" interaction.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/Version-0.7.0-orange.svg)
+![Version](https://img.shields.io/badge/Version-0.7.1-orange.svg)
 ![Data](https://img.shields.io/badge/Data-0.8.0-green.svg)
 ![React](https://img.shields.io/badge/React-18.x-61DAFB.svg)
 ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF.svg)
@@ -22,11 +22,12 @@ A **structured prompt generation tool** designed specifically for AI painting (G
 
 ## 📝 Foreword
 
-Prompt Fill is now at version **v0.7.0**. The original intention of this project is to solve the problem of hard-to-remember, hard-to-manage, and tedious modification of prompts in the AI painting process. By structuring prompts, creation becomes as simple as "filling in the blanks".
+Prompt Fill is now at version **v0.7.1**. The original intention of this project is to solve the problem of hard-to-remember, hard-to-manage, and tedious modification of prompts in the AI painting process. By structuring prompts, creation becomes as simple as "filling in the blanks".
 
 ### 🌟 Progress & Core Features
 
 *   **✅ Full Dark Mode Support**: One-click theme switching for desktop and mobile.
+*   **✅ IndexedDB Storage**: Now uses IndexedDB for large data, overcoming the 5MB LocalStorage limit.
 *   **✅ Linkage Groups**: Sync modifications globally within groups (e.g., `{{color}}_1`).
 *   **✅ Structured Prompt Engine**: Automatic interactive form conversion via `{{variable}}`.
 *   **✅ Dynamic Bank System**: Preset art tags with category management and batch import.
@@ -173,6 +174,10 @@ Copy the final prompt or save as a long image. JSON Import/Export is available f
 
 ## 📝 Change Log
 
+### Version 0.7.1 (2026-01-07)
+*   **💾 Storage Upgrade**: Migrated core data (templates, banks) to **IndexedDB**, overcoming the 5MB limit of LocalStorage.
+*   **🛠️ Maintenance**: Temporary disabled AI Terms feature and optimized internal storage architecture.
+
 ### Version 0.7.0 (2026-01-03)
 *   **📊 Analytics**: Integrated Vercel Analytics for real-time traffic monitoring.
 *   **🚀 Export V2**: Support for dynamic short-link QR codes and smart proxy fallback.
@@ -227,7 +232,7 @@ MIT License / [MIT 许可证](LICENSE).
 一个专为 AI 绘画（GPT、Nano Banana 等）设计的**结构化提示词生成工具**。通过可视化的"填空"交互方式，帮助用户快速构建、管理和迭代复杂的 Prompt。
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/Version-0.7.0-orange.svg)
+![Version](https://img.shields.io/badge/Version-0.7.1-orange.svg)
 ![Data](https://img.shields.io/badge/Data-0.8.0-green.svg)
 ![React](https://img.shields.io/badge/React-18.x-61DAFB.svg)
 ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF.svg)
@@ -238,11 +243,12 @@ MIT License / [MIT 许可证](LICENSE).
 
 ## 📝 写在前面
 
-Prompt Fill 现已迭代至 **v0.6.5** 版本。本项目初衷是解决 AI 绘画过程中提示词难记忆、难管理、修改繁琐的问题。通过将 Prompt 结构化，让创作变得像"填空"一样简单。
+Prompt Fill 现已迭代至 **v0.7.1** 版本。本项目初衷是解决 AI 绘画过程中提示词难记忆、难管理、修改繁琐的问题。通过将 Prompt 结构化，让创作变得像"填空"一样简单。
 
 ### 🌟 目前进度与核心功能
 
 *   **✅ 全面暗色模式支持**：支持桌面端与移动端的一键主题切换。
+*   **✅ IndexedDB 存储升级**：核心数据已迁移至 IndexedDB，彻底解决 5MB 存储上限问题。
 *   **✅ 词组联动系统**：支持变量成组联动，修改一处，全局同步。
 *   **✅ 结构化 Prompt 引擎**：支持 `{{variable}}` 语法，自动转化为交互式表单。
 *   **✅ 动态词库系统**：预置数百个常用标签，支持分类管理与批量导入。
@@ -388,6 +394,10 @@ Prompt Fill 现已迭代至 **v0.6.5** 版本。本项目初衷是解决 AI 绘�
 ---
 
 ## 📝 更新日志
+
+### Version 0.7.1 (2026-01-07)
+*   **💾 存储架构升级**：核心数据（模板、词库）迁移至 **IndexedDB**，彻底解决 LocalStorage 5MB 限制。
+*   **🛠️ 系统维护**：暂时下线“智能词条”功能，优化内部存储架构。
 
 ### Version 0.7.0 (2026-01-03)
 *   **📊 统计集成**：集成 Vercel Analytics，实时掌握应用访问动态。

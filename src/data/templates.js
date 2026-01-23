@@ -32,7 +32,7 @@
 /**
  * 模板系统版本号，每次更新 templates.js 或 banks.js 时请更新此版本号
  */
-export const SYSTEM_DATA_VERSION = "0.8.6";
+export const SYSTEM_DATA_VERSION = "0.8.7";
 
 /**
  * 分享功能正式环境域名（扫码导入需使用公网可访问地址）
@@ -1715,7 +1715,7 @@ export const INITIAL_TEMPLATES_CONFIG = [
     name: { cn: "漫画人物成真", en: "Manga to Reality" },
     content: TEMPLATE_MANGA_TO_REALITY,
     imageUrl: "https://s3.bmp.ovh/imgs/2025/12/16/f5291c56ece88cd9.jpg",
-    author: "@tanshilong（MarioTan）",
+    author: "PlayForge AI(@94van.AI)",
     selections: {
       "character_originality": { cn: "使用附图中的人物，确保结果与人物一致性", en: "Use character in attachment, ensure consistency" },
       "comic_scene": { cn: "唯美的卧室", en: "Beautiful bedroom" },
@@ -1748,7 +1748,7 @@ export const INITIAL_TEMPLATES_CONFIG = [
     name: { cn: "3x3 摄影网格出格版", en: "3x3 Photo Grid (Out of Box)" },
     content: TEMPLATE_PHOTO_GRID_V2,
     imageUrl: "https://s3.bmp.ovh/imgs/2025/12/17/77bfd2bf7abc3eac.png",
-    author: "@tanshilong（MarioTan）",
+    author: "PlayForge AI(@94van.AI)",
     selections: {
       "clothing": { cn: "炭灰色无袖连衣裙", en: "Charcoal grey sleeveless dress" },
       "grid_pose-0": { cn: "前景手指虚化", en: "Out-of-focus fingers in foreground" },

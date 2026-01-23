@@ -1,5 +1,5 @@
 {
-  "version": "0.8.6",
+  "version": "0.8.7",
   "config": [
     {
       "id": "tpl_default",
@@ -411,7 +411,7 @@
         "en": "### SUBJECT\n{{character_originality}}, stepping out from the manga panel borders and breaking boundaries. A dynamic and seamless interaction between the real-life version and the manga version.\n\n### SETTING\nLocation: {{comic_scene}}\nA giant manga book is spread open on the floor.\n\n### MANGA DETAILS\n- **Style:** Surreal black and white four-panel manga.\n- **Technique:** Authentic Japanese layout, screentone effects, thick black ink lines, clean and sharp linework.\n- **Content:** The manga version of the same person is trapped inside the manga book.\n- **Contrast:** Strong visual contrast between the monochromatic manga world and the vibrant real world.\n\n### REAL LIFE VERSION\n- **Visual Texture:** Vivid, colorful, photo-realistic, ultra-realistic 8K quality.\n- **Interaction:** Dynamically emerging from the manga surface, interacting directly with the manga version.\n- **Atmosphere:** Meta-style, a humorous encounter.\n\n### TECHNICAL SPECS\n- **Image Quality:** Ultra-realistic, 8K resolution, highly detailed.\n- **Blending:** Seamless fusion of manga line art and real-life photography.\n- **Aspect Ratio:** {{ratio}}"
       },
       "imageUrl": "https://s3.bmp.ovh/imgs/2025/12/16/f5291c56ece88cd9.jpg",
-      "author": "@tanshilong（MarioTan）",
+      "author": "PlayForge AI(@94van.AI)",
       "selections": {
         "character_originality": {
           "cn": "使用附图中的人物，确保结果与人物一致性",
@@ -488,7 +488,7 @@
         "en": "### Photo Grid Composition (Out-of-Box Version)\n\n**Scene:** 3x3 grid layout, using a seamless cool grey background. The character (facial features exactly as in the uploaded image) is wearing {{clothing}}, ensuring character consistency across all photos.\n\n**Lighting:** {{lighting}}, creating a unified and layered lighting effect.\n\n**Grid Details:**\n1. {{grid_pose}}, unified style, lens parameter: {{lens_param}};\n2. {{grid_pose}}, lens parameter: {{lens_param}}, showing different angles and expressions;\n3. {{grid_pose}}, lens parameter: {{lens_param}}, capturing subtle emotional expressions;\n4. {{grid_pose}}, lens parameter: {{lens_param}}, using depth of field to create layers;\n5. {{grid_pose}}, lens parameter: {{lens_param}}, highlighting the vividness of dynamic moments;\n6. {{grid_pose}}, lens parameter: {{lens_param}}, enhancing visual focus through foreground blur;\n7. {{grid_pose}}, lens parameter: {{lens_param}}, showing elegant posture and relaxed state;\n8. {{grid_pose}}, lens parameter: {{lens_param}}, capturing facial changes under natural light;\n9. {{grid_pose}}, lens parameter: {{lens_param}}, macro close-up showing facial details and texture.\n\n**Post-processing:** Maintain the realism of the original material, smooth contrast, apply moderate softening effects, ensuring uniform overall tone and high-quality texture.\n\n**Special Instructions:** The central grid image is not confined to its own square, creating a 3D visual effect as if jumping out of the frame. The central character occupies a larger area and is shown in full-body, overlapping other squares and casting shadows on them, creating a naked-eye 3D visual tension."
       },
       "imageUrl": "https://s3.bmp.ovh/imgs/2025/12/17/77bfd2bf7abc3eac.png",
-      "author": "@tanshilong（MarioTan）",
+      "author": "PlayForge AI(@94van.AI)",
       "selections": {
         "clothing": {
           "cn": "炭灰色无袖连衣裙",

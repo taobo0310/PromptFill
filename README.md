@@ -12,7 +12,7 @@ A **structured prompt generation tool** designed specifically for AI painting (G
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/Version-0.8.1-orange.svg)
-![Data](https://img.shields.io/badge/Data-0.8.6-green.svg)
+![Data](https://img.shields.io/badge/Data-0.8.7-green.svg)
 ![React](https://img.shields.io/badge/React-18.x-61DAFB.svg)
 ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF.svg)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC.svg)
@@ -35,7 +35,7 @@ Prompt Fill is now at version **v0.8.1**. The original intention of this project
 *   **✅ HD Social Sharing**: Export beautiful JPG long images with auto-extracted colors.
 *   **✅ Cloud Awareness**: Real-time sync for official templates and features.
 *   **✅ Local Storage**: Private data stored in browser LocalStorage.
-*   **✅ Data Update**: Data version 0.8.5 with expanded library.
+*   **✅ Data Update**: Data version 0.8.7 with author corrections.
 
 ---
 
@@ -176,6 +176,9 @@ Copy the final prompt or save as a long image. JSON Import/Export is available f
 
 ## 📝 Change Log
 
+### Data Version 0.8.7 (2026-01-24)
+*   **🛠️ Data Correction**: Updated authors for specific prompt templates.
+
 ### Version 0.8.1 (2026-01-22)
 *   **✨ Bilingual Custom Terms**: Support for separate CN and EN content in custom options.
 
@@ -248,7 +251,7 @@ MIT License / [MIT 许可证](LICENSE).
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Version](https://img.shields.io/badge/Version-0.8.1-orange.svg)
-![Data](https://img.shields.io/badge/Data-0.8.6-green.svg)
+![Data](https://img.shields.io/badge/Data-0.8.7-green.svg)
 ![React](https://img.shields.io/badge/React-18.x-61DAFB.svg)
 ![Vite](https://img.shields.io/badge/Vite-5.x-646CFF.svg)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC.svg)
@@ -271,7 +274,7 @@ Prompt Fill 现已迭代至 **v0.8.1** 版本。本项目初衷是解决 AI 绘�
 *   **✅ 高清社交分享**：内置模版封面渲染，支持一键导出精美 JPG 长图。
 *   **✅ 模版/版本感知**：官方模版云端同步感知，无需手动刷新。
 *   **✅ 纯本地存储**：基于浏览器 LocalStorage，数据完全掌握在自己手中。
-*   **✅ 数据持续更新**：数据版本 0.8.5，包含数十款精选模版。
+*   **✅ 数据持续更新**：数据版本 0.8.7，包含模版作者更正。
 
 ---
 
@@ -411,6 +414,9 @@ Prompt Fill 现已迭代至 **v0.8.1** 版本。本项目初衷是解决 AI 绘�
 ---
 
 ## 📝 更新日志
+
+### Data Version 0.8.7 (2026-01-24)
+*   **🛠️ 数据修正**：更新了部分提示词模板的作者信息。
 
 ### Version 0.8.1 (2026-01-22)
 *   **✨ 自定义词条双语支持**：支持在自定义词条时分别输入中文和英文内容。

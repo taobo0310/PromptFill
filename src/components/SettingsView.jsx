@@ -36,6 +36,16 @@ export const SettingsView = ({
   
   const updateLogs = language === 'cn' ? [
     { 
+      version: 'Data V0.8.7', 
+      date: '2026年1月24日', 
+      time: '01:02 AM',
+      title: '提示词作者信息更正',
+      type: 'UPDATE',
+      content: [
+        '🛠️ 数据更正：修正了部分精选模版的作者标注信息。'
+      ]
+    },
+    { 
       version: 'V0.8.1', 
       date: '2026年1月22日', 
       time: '10:13 PM',
@@ -221,6 +231,16 @@ export const SettingsView = ({
       ]
     }
   ] : [
+    { 
+      version: 'Data V0.8.7', 
+      date: 'Jan 24, 2026', 
+      time: '01:02 AM',
+      title: 'Author Attribution Fix',
+      type: 'UPDATE',
+      content: [
+        '🛠️ Data Update: Corrected author information for specific featured templates.'
+      ]
+    },
     { 
       version: 'V0.8.1', 
       date: 'Jan 22, 2026', 

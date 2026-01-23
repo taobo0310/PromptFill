@@ -37,6 +37,14 @@ export const MobileSettingsView = ({
   // 完善后的更新日志 (同步桌面端内容)
   const updateLogs = language === 'cn' ? [
     { 
+      version: 'Data V0.8.7', 
+      date: '2026-01-24', 
+      title: '提示词作者标注修正',
+      content: [
+        '🛠️ 修正了部分模版的作者归属信息'
+      ]
+    },
+    { 
       version: 'V0.8.1', 
       date: '2026-01-22', 
       title: '自定义词条支持双语模式',
@@ -135,6 +143,14 @@ export const MobileSettingsView = ({
       ]
     }
   ] : [
+    { 
+      version: 'Data V0.8.7', 
+      date: '2026-01-24', 
+      title: 'Author Attribution Fix',
+      content: [
+        '🛠️ Corrected author info for specific templates'
+      ]
+    },
     { 
       version: 'V0.8.1', 
       date: '2026-01-22', 

@@ -3,4 +3,5 @@
  */
 
 export { default as ImagePreviewModal } from './ImagePreviewModal';
+export { default as SourceAssetModal } from './SourceAssetModal';
 export { AnimatedSlogan, MobileAnimatedSlogan } from './AnimatedSlogan';

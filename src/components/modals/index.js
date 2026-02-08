@@ -8,3 +8,4 @@ export { default as ImportTokenModal } from './ImportTokenModal';
 export { default as ShareImportModal } from './ShareImportModal';
 export { CategoryManagerModal } from './CategoryManagerModal';
 export { ConfirmModal } from './ConfirmModal';
+export { AddTemplateTypeModal } from './AddTemplateTypeModal';

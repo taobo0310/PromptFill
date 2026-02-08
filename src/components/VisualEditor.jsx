@@ -11,7 +11,8 @@ export const VisualEditor = React.forwardRef(({
   // 移动端常驻标题与作者
   activeTemplate,
   language,
-  t
+  t,
+  onInteraction // 新增：交互回调（用于自动折叠信息区）
 }, ref) => {
   const preRef = useRef(null);
   const containerRef = useRef(null);
@@ -83,6 +84,13 @@ export const VisualEditor = React.forwardRef(({
     return (
       <div 
         ref={containerRef}
+        onScroll={(e) => {
+          handleContainerScroll(e);
+          if (onInteraction) onInteraction();
+        }}
+        onClick={() => {
+          if (onInteraction) onInteraction();
+        }}
         className={`w-full h-full overflow-y-auto overflow-x-hidden flex flex-col transition-colors duration-300 ${isDarkMode ? 'bg-[#2A2928]' : 'bg-white'}`}
       >
         {/* Mobile Header in Scrollable Area */}
@@ -119,6 +127,9 @@ export const VisualEditor = React.forwardRef(({
             ref={ref}
             value={value}
             onChange={onChange}
+            onFocus={() => {
+              if (onInteraction) onInteraction();
+            }}
             spellCheck={false}
             className={`absolute inset-0 w-full h-full px-6 font-mono text-sm leading-relaxed whitespace-pre-wrap break-words bg-transparent text-transparent resize-none focus:outline-none z-10 m-0 selection:bg-orange-500/30 ${isDarkMode ? 'caret-white selection:text-white' : 'caret-gray-800 selection:bg-orange-200 selection:text-orange-900'}`}
             style={{ 

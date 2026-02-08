@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Play } from 'lucide-react';
 
 /**
  * 模板轮播图组件
@@ -127,6 +128,13 @@ export const TemplateCarousel = ({ templates, language, isDarkMode, setZoomedIma
           referrerPolicy="no-referrer"
           draggable={false}
         />
+
+        {/* Video Indicator for Carousel */}
+        {currentImage.type === 'video' && (
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black/20 backdrop-blur-md rounded-full p-6 text-white border border-white/20 pointer-events-none">
+            <Play size={48} fill="currentColor" />
+          </div>
+        )}
 
         {/* 渐变遮罩 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />

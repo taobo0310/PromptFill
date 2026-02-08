@@ -126,6 +126,14 @@ export const TAG_STYLES = {
   "游戏": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
   "创意": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
   "节日": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
+  "动作": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
+  "影视": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
+  "纪实": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
+  "幻想": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
+  "动画": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
+  "武侠": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
+  "现代": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
+  "修仙": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30",
   "default": "bg-transparent text-stone-500/90 border-orange-500/20 dark:text-stone-400/90 dark:border-orange-500/30"
 };
 
@@ -141,7 +149,15 @@ export const TAG_LABELS = {
     "宠物": "宠物",
     "游戏": "游戏",
     "创意": "创意",
-    "节日": "节日"
+    "节日": "节日",
+    "动作": "动作",
+    "影视": "影视",
+    "纪实": "纪实",
+    "幻想": "幻想",
+    "动画": "动画",
+    "武侠": "武侠",
+    "现代": "现代",
+    "修仙": "修仙"
   },
   en: {
     "建筑": "Architecture",
@@ -154,6 +170,14 @@ export const TAG_LABELS = {
     "宠物": "Pets",
     "游戏": "Gaming",
     "创意": "Creative",
-    "节日": "Festival"
+    "节日": "Festival",
+    "动作": "Action",
+    "影视": "Film",
+    "纪实": "Documentary",
+    "幻想": "Fantasy",
+    "动画": "Animation",
+    "武侠": "Wuxia",
+    "现代": "Modern",
+    "修仙": "Xianxia"
   }
 };

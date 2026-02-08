@@ -1857,6 +1857,179 @@ export const INITIAL_BANKS = {
       { cn: "绿色（辅助参考线）", en: "Green auxiliary reference lines" },
       { cn: "多色混合（紫/青/蓝组合）", en: "Multi-color combination (purple/cyan/blue mix)" }
     ]
+  },
+
+  // 视频打斗风格词库
+  fight_style: {
+    label: { cn: "打斗风格", en: "Fight Style" },
+    category: "action",
+    options: [
+      { cn: "武侠飘逸风（轻功、剑气、衣袂飘飘）", en: "Wuxia elegant style (light kung fu, sword aura, flowing robes)" },
+      { cn: "硬派写实格斗（拳拳到肉、真实打击感）", en: "Hardcore realistic combat (hard-hitting, raw impact)" },
+      { cn: "暗杀潜行风（迅捷暗杀、一击致命）", en: "Stealth assassination style (swift kills, one-hit lethal)" },
+      { cn: "港片动作风（成龙式、环境互动、幽默打斗）", en: "Hong Kong action style (Jackie Chan-esque, environmental interaction, comedic)" },
+      { cn: "日式剑戟风（拔刀术、一刀流、静与动的对比）", en: "Japanese chambara style (iaijutsu, single-stroke, contrast of stillness and motion)" },
+      { cn: "现代近身格斗（综合格斗、枪械近战混合）", en: "Modern close-quarters combat (MMA, gun-fu hybrid)" },
+      { cn: "魔幻战斗风（元素法术、能量冲击波）", en: "Fantasy combat style (elemental magic, energy shockwaves)" }
+    ]
+  },
+
+  // 镜头节奏词库
+  camera_rhythm: {
+    label: { cn: "镜头节奏", en: "Camera Rhythm" },
+    category: "visual",
+    options: [
+      { cn: "快速切换蒙太奇（多角度快速剪辑）", en: "Rapid montage cutting (multi-angle fast edits)" },
+      { cn: "长镜头一镜到底（沉浸式跟随拍摄）", en: "Long take single shot (immersive follow-through)" },
+      { cn: "慢动作特写穿插（关键瞬间减速）", en: "Slow-motion close-up intercuts (key moment deceleration)" },
+      { cn: "环绕旋转跟拍（360度围绕主角运镜）", en: "Orbiting tracking shot (360° rotation around subject)" },
+      { cn: "推拉变焦节奏（紧张感逐步递进）", en: "Push-pull zoom rhythm (gradually building tension)" },
+      { cn: "稳定器跟拍配合手持晃动（动静结合）", en: "Stabilized tracking mixed with handheld shake (dynamic contrast)" }
+    ]
+  },
+
+  // 科幻电影风格词库
+  sci_fi_movie_style: {
+    label: { cn: "科幻电影风格", en: "Sci-Fi Movie Style" },
+    category: "visual",
+    options: [
+      { cn: "好莱坞科幻大片（Hollywood Sci-Fi Blockbuster）", en: "Hollywood Sci-Fi Blockbuster" },
+      { cn: "赛博朋克美学（Cyberpunk Aesthetics）", en: "Cyberpunk Aesthetics" },
+      { cn: "末日废土风格（Post-Apocalyptic Wasteland）", en: "Post-Apocalyptic Wasteland" },
+      { cn: "太空歌剧史诗（Space Opera Epic）", en: "Space Opera Epic" },
+      { cn: "反乌托邦未来（Dystopian Future）", en: "Dystopian Future" },
+      { cn: "硬核科幻写实（Hard Sci-Fi Realism）", en: "Hard Sci-Fi Realism" },
+      { cn: "日本动漫未来风（Japanese Anime Future）", en: "Japanese Anime Future" },
+      { cn: "复古未来主义（Retro-Futurism）", en: "Retro-Futurism" }
+    ]
+  },
+
+  // 未来载具词库
+  futuristic_vehicle: {
+    label: { cn: "未来载具", en: "Futuristic Vehicle" },
+    category: "item",
+    options: [
+      { cn: "流线型反重力飞行器（Anti-gravity Vehicle）", en: "Streamlined Anti-gravity Vehicle" },
+      { cn: "太空战斗机（Space Fighter）", en: "Space Fighter" },
+      { cn: "磁悬浮超跑（Magnetic Levitation Sports Car）", en: "Magnetic Levitation Sports Car" },
+      { cn: "重型运输飞船（Heavy Cargo Spaceship）", en: "Heavy Cargo Spaceship" },
+      { cn: "单兵飞行装甲（Single-Person Flight Armor）", en: "Single-Person Flight Armor" },
+      { cn: "悬浮摩托车（Hover Motorcycle）", en: "Hover Motorcycle" },
+      { cn: "隐形侦察机（Stealth Reconnaissance Craft）", en: "Stealth Reconnaissance Craft" },
+      { cn: "量子穿梭机（Quantum Shuttle）", en: "Quantum Shuttle" }
+    ]
+  },
+
+  // 赛博朋克城市场景词库
+  cyberpunk_city_scene: {
+    label: { cn: "赛博朋克城市场景", en: "Cyberpunk City Scene" },
+    category: "location",
+    options: [
+      { cn: "未来主义超级城市峡谷（Megacity Canyon）", en: "Futuristic Megacity Canyon" },
+      { cn: "多层立体浮空城市（Multi-tier Floating City）", en: "Multi-tier Floating City" },
+      { cn: "地下霓虹城寨（Underground Neon Town）", en: "Underground Neon Town" },
+      { cn: "轨道空间站都市（Orbital Space Station City）", en: "Orbital Space Station City" },
+      { cn: "废弃工业废土城（Abandoned Industrial Wasteland City）", en: "Abandoned Industrial Wasteland City" },
+      { cn: "海底透明穹顶城市（Underwater Dome City）", en: "Underwater Dome City" },
+      { cn: "云端天空之城（Cloud Sky City）", en: "Cloud Sky City" },
+      { cn: "数字虚拟矩阵都市（Digital Virtual Matrix City）", en: "Digital Virtual Matrix City" }
+    ]
+  },
+
+  // 跟拍镜头类型词库
+  tracking_camera_shot: {
+    label: { cn: "跟拍镜头类型", en: "Tracking Camera Shot" },
+    category: "visual",
+    options: [
+      { cn: "极具纵深感的广角跟拍（Wide Angle Tracking Shot）", en: "Wide Angle Tracking Shot with Deep Depth" },
+      { cn: "俯瞰追踪拍摄（Overhead Tracking Shot）", en: "Overhead Tracking Shot" },
+      { cn: "侧面平行跟随（Side Parallel Follow）", en: "Side Parallel Follow" },
+      { cn: "斜向45度跟拍（Diagonal 45° Tracking）", en: "Diagonal 45° Tracking" },
+      { cn: "螺旋上升环绕（Spiral Ascent Orbit）", en: "Spiral Ascent Orbit" },
+      { cn: "低空掠过跟拍（Low Altitude Sweep）", en: "Low Altitude Sweep" },
+      { cn: "穿越障碍跟拍（Obstacle Weaving Shot）", en: "Obstacle Weaving Shot" },
+      { cn: "远景缩放跟拍（Dolly Zoom Tracking）", en: "Dolly Zoom Tracking" }
+    ]
+  },
+
+  // 动作镜头类型词库
+  action_camera_shot: {
+    label: { cn: "动作镜头类型", en: "Action Camera Shot" },
+    category: "visual",
+    options: [
+      { cn: "紧张的驾驶舱视角（Cockpit View）", en: "Tense Cockpit View" },
+      { cn: "紧凑跟拍（Tight Action Shot）", en: "Tight Action Shot" },
+      { cn: "第一人称视角（First-Person POV）", en: "First-Person POV" },
+      { cn: "动作 GoPro 附着视角（Action GoPro Mount）", en: "Action GoPro Mount" },
+      { cn: "急速甩镜头（Whip Pan Transition）", en: "Whip Pan Transition" },
+      { cn: "慢动作特写（Slow-Motion Close-Up）", en: "Slow-Motion Close-Up" },
+      { cn: "动态震动镜头（Dynamic Camera Shake）", en: "Dynamic Camera Shake" },
+      { cn: "多角度快速切换（Multi-Angle Quick Cut）", en: "Multi-Angle Quick Cut" }
+    ]
+  },
+
+  // 自然环境类型词库
+  natural_environment: {
+    label: { cn: "自然环境类型", en: "Natural Environment Type" },
+    category: "location",
+    options: [
+      { cn: "古代雨林（Ancient Rainforest）", en: "Ancient Rainforest" },
+      { cn: "雪山峡谷（Snow Mountain Canyon）", en: "Snow Mountain Canyon" },
+      { cn: "沙漠绿洲（Desert Oasis）", en: "Desert Oasis" },
+      { cn: "冰川峡谷（Glacier Canyon）", en: "Glacier Canyon" },
+      { cn: "火山熔岩地带（Volcanic Lava Zone）", en: "Volcanic Lava Zone" },
+      { cn: "热带群岛（Tropical Archipelago）", en: "Tropical Archipelago" },
+      { cn: "大峡谷（Grand Canyon）", en: "Grand Canyon" },
+      { cn: "北极冰原（Arctic Ice Field）", en: "Arctic Ice Field" }
+    ]
+  },
+
+  // 军用飞行器词库
+  military_aircraft: {
+    label: { cn: "军用飞行器", en: "Military Aircraft" },
+    category: "item",
+    options: [
+      { cn: "战斗机（Fighter Jet）", en: "Fighter Jet" },
+      { cn: "隐形战机（Stealth Fighter）", en: "Stealth Fighter" },
+      { cn: "攻击机（Attack Aircraft）", en: "Attack Aircraft" },
+      { cn: "侦察机（Reconnaissance Plane）", en: "Reconnaissance Plane" },
+      { cn: "轰炸机（Bomber）", en: "Bomber" },
+      { cn: "垂直起降战机（VTOL Aircraft）", en: "VTOL Aircraft" },
+      { cn: "无人战斗机（UCAV）", en: "UCAV" },
+      { cn: "超音速截击机（Supersonic Interceptor）", en: "Supersonic Interceptor" }
+    ]
+  },
+
+  // 航拍开场镜头词库
+  aerial_opening_shot: {
+    label: { cn: "航拍开场镜头", en: "Aerial Opening Shot" },
+    category: "visual",
+    options: [
+      { cn: "史诗超广角航拍（Epic Ultra Wide Aerial Shot）", en: "Epic Ultra Wide Aerial Shot" },
+      { cn: "俯瞰全景（Overhead Panoramic View）", en: "Overhead Panoramic View" },
+      { cn: "侧面横扫（Lateral Sweep）", en: "Lateral Sweep" },
+      { cn: "垂直俯冲（Vertical Dive）", en: "Vertical Dive" },
+      { cn: "环绕旋转（Orbiting Rotation）", en: "Orbiting Rotation" },
+      { cn: "平推向前（Straight Push Forward）", en: "Straight Push Forward" },
+      { cn: "斜角俯冲（Diagonal Dive）", en: "Diagonal Dive" },
+      { cn: "高角度俯瞰（High Angle Overlook）", en: "High Angle Overlook" }
+    ]
+  },
+
+  // 动态跟拍风格词库
+  dynamic_tracking_shot: {
+    label: { cn: "动态跟拍风格", en: "Dynamic Tracking Shot Style" },
+    category: "visual",
+    options: [
+      { cn: "第三人称紧密跟拍（Third-Person Tight Tracking）", en: "Third-Person Tight Tracking" },
+      { cn: "第一人称视角（First-Person POV）", en: "First-Person POV" },
+      { cn: "侧面跟随（Side Follow）", en: "Side Follow" },
+      { cn: "头顶俯视跟踪（Top-Down Tracking）", en: "Top-Down Tracking" },
+      { cn: "斜后方45度跟拍（45-Degree Rear Tracking）", en: "45-Degree Rear Tracking" },
+      { cn: "动态环绕跟拍（Dynamic Orbit Tracking）", en: "Dynamic Orbit Tracking" },
+      { cn: "分离镜头（Split Shot）", en: "Split Shot" },
+      { cn: "震动跟拍（Shaky Tracking）", en: "Shaky Tracking" }
+    ]
   }
 };
 
@@ -2019,6 +2192,20 @@ export const INITIAL_DEFAULTS = {
   room_condition: { cn: "精致装修，高档材料的质感与细节", en: "Exquisitely decorated, high-end materials with refined details" },
   // 解剖学人物画默认值
   anatomy_teaching_style: { cn: "Proko 风格（简化几何、教学导向、清晰构造线）", en: "Proko style (simplified geometry, educational focus, clear construction lines)" },
-  construction_line_color: { cn: "紫色/紫罗兰色（主构造线）", en: "Purple/violet sketch lines (primary construction)" }
+  construction_line_color: { cn: "紫色/紫罗兰色（主构造线）", en: "Purple/violet sketch lines (primary construction)" },
+  // 酒馆武打戏视频默认值
+  fight_style: { cn: "武侠飘逸风（轻功、剑气、衣袂飘飘）", en: "Wuxia elegant style (light kung fu, sword aura, flowing robes)" },
+  camera_rhythm: { cn: "快速切换蒙太奇（多角度快速剪辑）", en: "Rapid montage cutting (multi-angle fast edits)" },
+  // 赛博朋克飞行器视频默认值
+  sci_fi_movie_style: { cn: "赛博朋克美学（Cyberpunk Aesthetics）", en: "Cyberpunk Aesthetics" },
+  futuristic_vehicle: { cn: "流线型反重力飞行器（Anti-gravity Vehicle）", en: "Streamlined Anti-gravity Vehicle" },
+  cyberpunk_city_scene: { cn: "未来主义超级城市峡谷（Megacity Canyon）", en: "Futuristic Megacity Canyon" },
+  tracking_camera_shot: { cn: "极具纵深感的广角跟拍（Wide Angle Tracking Shot）", en: "Wide Angle Tracking Shot with Deep Depth" },
+  action_camera_shot: { cn: "紧张的驾驶舱视角（Cockpit View）", en: "Tense Cockpit View" },
+  // 雨林瀑布战机穿越视频默认值
+  natural_environment: { cn: "古代雨林（Ancient Rainforest）", en: "Ancient Rainforest" },
+  military_aircraft: { cn: "战斗机（Fighter Jet）", en: "Fighter Jet" },
+  aerial_opening_shot: { cn: "史诗超广角航拍（Epic Ultra Wide Aerial Shot）", en: "Epic Ultra Wide Aerial Shot" },
+  dynamic_tracking_shot: { cn: "第三人称紧密跟拍（Third-Person Tight Tracking）", en: "Third-Person Tight Tracking" }
 };
 

@@ -469,12 +469,12 @@ export const useShareFunctions = (
    */
   const doCopyShareLink = useCallback(async () => {
     if (!activeTemplate) return;
-    
+
     setIsGenerating(true);
     try {
       const compressed = compressTemplate(activeTemplate, banks, categories);
       let finalShareData = prefetchedShortCode;
-      
+
       if (!finalShareData) {
         try {
           const shortCode = await Promise.race([
@@ -489,39 +489,18 @@ export const useShareFunctions = (
           }
         }
       }
-      
+
       const isTauri = !!(window.__TAURI_INTERNALS__ || window.__TAURI_IPC__ || window.location.protocol === 'tauri:');
       const base = PUBLIC_SHARE_URL || (isTauri ? 'https://aipromptfill.com' : (window.location.origin + window.location.pathname));
       const fullUrl = `${base}${base.endsWith('/') ? '' : '/'}#/share?share=${finalShareData || compressed}`;
 
-      // --- iOS 原生分享逻辑 ---
-      const templateName = getLocalized(activeTemplate.name, language);
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Prompt分享: ${templateName}`,
-            text: `分享一个不错的 AI 提示词模版：${templateName}`,
-            url: fullUrl,
-          });
-          setShowShareOptionsModal(false);
-          return;
-        } catch (shareErr) {
-          if (shareErr.name !== 'AbortError') {
-            console.warn('Native share failed, falling back to clipboard:', shareErr);
-          } else {
-            setIsGenerating(false);
-            return;
-          }
-        }
-      }
-
-      // --- 兜底：复制到剪贴板 ---
+      // --- 直接复制到剪贴板 ---
       const success = await copyToClipboard(fullUrl);
       if (success) {
         alert(t('share_success'));
         setShowShareOptionsModal(false);
       } else {
-        alert(language === 'cn' ? '复制失败，请尝试口令分享' : 'Copy failed');
+        alert(language === 'cn' ? '复制失败，请手动复制下方链接' : 'Copy failed, please manually copy the link below');
       }
     } catch (err) {
       console.error("Share failed:", err);
@@ -529,7 +508,7 @@ export const useShareFunctions = (
     } finally {
       setIsGenerating(false);
     }
-  }, [activeTemplate, getShortCodeFromServer, t, language, banks, categories, prefetchedShortCode]);
+  }, [activeTemplate, getShortCodeFromServer, t, language, banks, categories, prefetchedShortCode, shortCodeError]);
 
   /**
    * 复制分享口令 (支持短码)

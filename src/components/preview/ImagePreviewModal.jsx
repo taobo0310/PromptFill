@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { X, ChevronLeft, ChevronRight, Sparkles, ImageIcon } from 'lucide-react';
-import { getLocalized } from '../../utils/helpers';
+import { getLocalized, getVideoEmbedInfo } from '../../utils/helpers';
 import { PremiumButton } from '../PremiumButton';
 
 /**
@@ -42,12 +42,13 @@ const ImagePreviewModal = React.memo(({
   // 早期返回：如果没有图片预览，不渲染组件
   if (!zoomedImage) return null;
 
-  // 根据 zoomedImage 找到对应的模板
+  // 根据 zoomedImage 找到对应的模板（支持 imageUrl、imageUrls、videoUrl 匹配）
   const template = React.useMemo(() => {
     if (!templates) return null;
     return templates.find(t =>
       t.imageUrl === zoomedImage ||
-      (t.imageUrls && t.imageUrls.includes(zoomedImage))
+      (t.imageUrls && t.imageUrls.includes(zoomedImage)) ||
+      t.videoUrl === zoomedImage
     ) || templates[0];
   }, [zoomedImage, templates]);
 
@@ -91,6 +92,9 @@ const ImagePreviewModal = React.memo(({
   });
 
   const currentImageUrl = allImages[currentIndex];
+  const isVideo = template?.type === 'video';
+  // poster 只在有真实图片 URL 时使用，避免传入 videoUrl 或空字符串导致第一帧不显示
+  const videoPoster = template?.imageUrl || undefined;
 
   // 锁定/解锁背景滚动
   useEffect(() => {
@@ -167,7 +171,7 @@ const ImagePreviewModal = React.memo(({
             className="absolute inset-0 z-[-1] bg-cover bg-center bg-no-repeat"
             style={{ backgroundImage: 'url(/background1.png)' }}
           >
-            <div className={`absolute inset-0 backdrop-blur-2xl ${isDarkMode ? 'bg-black/80' : 'bg-white/60'}`}></div>
+            <div className={`absolute inset-0 backdrop-blur-2xl ${isDarkMode ? 'bg-black/95' : 'bg-white/90'}`}></div>
           </div>
 
           <button
@@ -184,14 +188,14 @@ const ImagePreviewModal = React.memo(({
           >
               {/* Image Section */}
               <div
-                className={`transition-all duration-500 ease-in-out flex flex-col justify-center items-center perspective-[1000px] relative px-6 flex-shrink-0 ${isTextExpanded ? 'h-[30vh] pt-10' : 'h-[60vh]'}`}
-                style={{ perspective: '1200px' }}
+                className={`transition-all duration-500 ease-in-out flex flex-col justify-center items-center relative px-6 flex-shrink-0 ${isVideo ? 'perspective-none' : 'perspective-[1000px]'} ${isTextExpanded ? 'h-[30vh] pt-10' : 'h-[60vh]'}`}
+                style={{ perspective: isVideo ? 'none' : '1200px' }}
                 onTouchMove={handleTouchMove}
               >
                   <div
                     className="relative transition-transform duration-200 ease-out flex items-center justify-center w-full h-full"
                     style={{
-                      transform: isTextExpanded ? 'none' : `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+                      transform: (isTextExpanded || isVideo) ? 'none' : `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
                       transformStyle: 'preserve-3d'
                     }}
                   >
@@ -200,13 +204,37 @@ const ImagePreviewModal = React.memo(({
                       className={`absolute inset-6 blur-3xl rounded-3xl -z-10 transition-opacity duration-500 ${isDarkMode ? 'bg-orange-500/5' : 'bg-orange-500/10'}`}
                       style={{ transform: 'translateZ(-50px)' }}
                     />
-                    <img
-                        key={currentImageUrl}
-                        src={currentImageUrl}
-                        alt="Zoomed Preview"
-                        className={`max-w-full max-h-full object-contain rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in duration-300 ${isDarkMode ? 'border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.4)]' : 'border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.15)]'}`}
-                        style={{ transform: isTextExpanded ? 'none' : 'translateZ(20px)' }}
-                    />
+                    {isVideo && template?.videoUrl ? (
+                        getVideoEmbedInfo(template.videoUrl)?.isEmbed ? (
+                          <div className="w-full aspect-video">
+                            <iframe
+                              src={getVideoEmbedInfo(template.videoUrl).embedUrl}
+                              className="w-full h-full border-0 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)]"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                              title="Video Preview"
+                            />
+                          </div>
+                        ) : (
+                          <video 
+                              src={template.videoUrl}
+                              {...(videoPoster ? { poster: videoPoster } : {})}
+                              controls
+                              playsInline
+                              preload="metadata"
+                              className={`max-w-full max-h-full object-contain rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in duration-300 ${isDarkMode ? 'border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.4)]' : 'border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.15)]'}`}
+                              onClick={(e) => e.stopPropagation()}
+                          />
+                        )
+                    ) : (
+                        <img
+                            key={currentImageUrl}
+                            src={currentImageUrl}
+                            alt="Zoomed Preview"
+                            className={`max-w-full max-h-full object-contain rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] animate-in fade-in duration-300 ${isDarkMode ? 'border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.4)]' : 'border border-white/50 shadow-[0_20px_50px_rgba(0,0,0,0.15)]'}`}
+                            style={{ transform: (isTextExpanded || isVideo) ? 'none' : 'translateZ(20px)' }}
+                        />
+                    )}
                   </div>
 
                   {/* Mobile Navigation */}
@@ -322,7 +350,7 @@ const ImagePreviewModal = React.memo(({
             backgroundImage: 'url(/background1.png)',
           }}
         >
-          <div className="absolute inset-0 bg-black/85 backdrop-blur-3xl"></div>
+          <div className="absolute inset-0 bg-black/95 backdrop-blur-3xl"></div>
         </div>
 
         <button
@@ -338,13 +366,13 @@ const ImagePreviewModal = React.memo(({
         >
             {/* Left: Image Section with 3D Effect */}
             <div
-              className={`flex-shrink-0 flex justify-center items-center perspective-[1000px] relative group/modal-img flex-1`}
-              style={{ perspective: '1200px' }}
+              className={`flex-1 min-w-0 flex justify-center items-center relative group/modal-img ${isVideo ? 'w-full' : 'perspective-[1000px]'}`}
+              style={{ perspective: isVideo ? 'none' : '1200px' }}
             >
                 <div
-                  className="relative transition-transform duration-200 ease-out h-full flex items-center justify-center"
+                  className={`relative transition-transform duration-200 ease-out flex items-center justify-center ${isVideo ? 'w-full h-full' : 'h-full'}`}
                   style={{
-                    transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
+                    transform: isVideo ? 'none' : `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`,
                     transformStyle: 'preserve-3d'
                   }}
                 >
@@ -353,13 +381,39 @@ const ImagePreviewModal = React.memo(({
                     style={{ transform: 'translateZ(-50px)' }}
                   />
 
-                  <img
-                      key={currentImageUrl}
-                      src={currentImageUrl}
-                      alt="Zoomed Preview"
-                      className={`max-w-full rounded-2xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/20 animate-in fade-in duration-300 max-h-[75vh] object-contain`}
-                      style={{ transform: 'translateZ(20px)' }}
-                  />
+                  {isVideo && template?.videoUrl ? (
+                    <div className="w-full">
+                      {getVideoEmbedInfo(template.videoUrl)?.isEmbed ? (
+                        <div className="w-full aspect-video">
+                          <iframe
+                            src={getVideoEmbedInfo(template.videoUrl).embedUrl}
+                            className="w-full h-full border-0 rounded-2xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)]"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            title="Video Preview"
+                          />
+                        </div>
+                      ) : (
+                        <video 
+                            src={template.videoUrl}
+                            {...(videoPoster ? { poster: videoPoster } : {})}
+                            controls
+                            playsInline
+                            preload="metadata"
+                            className={`w-full h-auto rounded-2xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/20 animate-in fade-in duration-300 max-h-[70vh] object-contain`}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <img
+                        key={currentImageUrl}
+                        src={currentImageUrl}
+                        alt="Zoomed Preview"
+                        className={`max-w-full rounded-2xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] border border-white/20 animate-in fade-in duration-300 max-h-[75vh] object-contain`}
+                        style={{ transform: isVideo ? 'none' : 'translateZ(20px)' }}
+                    />
+                  )}
                 </div>
 
                 {/* Navigation & Indicator */}

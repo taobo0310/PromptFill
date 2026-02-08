@@ -34,6 +34,8 @@ export const useTemplateManagement = (
   setTempTemplateBestModel,
   tempTemplateBaseImage,
   setTempTemplateBaseImage,
+  tempVideoUrl,
+  setTempVideoUrl,
   language,
   isMobileDevice,
   setMobileTab,
@@ -41,7 +43,7 @@ export const useTemplateManagement = (
   t
 ) => {
   // 添加新模板
-  const handleAddTemplate = useCallback(() => {
+  const handleAddTemplate = useCallback((type = 'image') => {
     const newId = `tpl_${Date.now()}`;
     const newName = t('new_template_name');
     const newAuthor = "PromptFill User";
@@ -52,9 +54,17 @@ export const useTemplateManagement = (
       content: t('new_template_content'),
       selections: {},
       tags: [],
-      bestModel: "Nano Banana Pro",
+      type: type, // 新增：模板类型
+      bestModel: type === 'video' ? "Seedance 2.0" : "Nano Banana Pro", // 视频模版默认模型
       baseImage: "optional_base_image"
     };
+    
+    // 如果是视频模版，初始化 videoUrl 和 source
+    if (type === 'video') {
+      newTemplate.videoUrl = "";
+      newTemplate.source = [];
+    }
+
     setTemplates(prev => [...prev, newTemplate]);
     setActiveTemplateId(newId);
     setIsEditing(true);
@@ -63,8 +73,9 @@ export const useTemplateManagement = (
     setEditingTemplateNameId(newId);
     setTempTemplateName(newName);
     setTempTemplateAuthor(newAuthor);
-    setTempTemplateBestModel("Nano Banana Pro");
+    setTempTemplateBestModel(type === 'video' ? "Seedance 2.0" : "Nano Banana Pro");
     setTempTemplateBaseImage("optional_base_image");
+    setTempVideoUrl("");
 
     // 在移动端自动切换到编辑Tab
     if (isMobileDevice) {
@@ -145,7 +156,8 @@ export const useTemplateManagement = (
     setTempTemplateAuthor(t_item.author || "");
     setTempTemplateBestModel(t_item.bestModel || "Nano Banana Pro");
     setTempTemplateBaseImage(t_item.baseImage || "optional_base_image");
-  }, [setIsEditing, setEditingTemplateNameId, setTempTemplateName, setTempTemplateAuthor, setTempTemplateBestModel, setTempTemplateBaseImage, language]);
+    setTempVideoUrl(t_item.videoUrl || "");
+  }, [setIsEditing, setEditingTemplateNameId, setTempTemplateName, setTempTemplateAuthor, setTempTemplateBestModel, setTempTemplateBaseImage, setTempVideoUrl, language]);
 
   // 开始编辑
   const handleStartEditing = useCallback(() => {
@@ -156,8 +168,9 @@ export const useTemplateManagement = (
       setTempTemplateAuthor(activeTemplate.author || "");
       setTempTemplateBestModel(activeTemplate.bestModel || "Nano Banana Pro");
       setTempTemplateBaseImage(activeTemplate.baseImage || "optional_base_image");
+      setTempVideoUrl(activeTemplate.videoUrl || "");
     }
-  }, [setIsEditing, activeTemplate, setTempTemplateName, setTempTemplateAuthor, setTempTemplateBestModel, setTempTemplateBaseImage, language]);
+  }, [setIsEditing, activeTemplate, setTempTemplateName, setTempTemplateAuthor, setTempTemplateBestModel, setTempTemplateBaseImage, setTempVideoUrl, language]);
 
   // 停止编辑
   const handleStopEditing = useCallback(() => {
@@ -166,7 +179,7 @@ export const useTemplateManagement = (
   }, [setIsEditing, setEditingTemplateNameId]);
 
   // 保存模板名称
-  const saveTemplateName = useCallback((editingTemplateNameId, tempTemplateName, tempTemplateAuthor, tempTemplateBestModel, tempTemplateBaseImage) => {
+  const saveTemplateName = useCallback((editingTemplateNameId, tempTemplateName, tempTemplateAuthor, tempTemplateBestModel, tempTemplateBaseImage, tempVideoUrl) => {
     if (editingTemplateNameId && tempTemplateName && tempTemplateName.trim()) {
       setTemplates(prev => prev.map(t_item => {
         if (t_item.id === editingTemplateNameId) {
@@ -178,7 +191,8 @@ export const useTemplateManagement = (
             name: newName, 
             author: tempTemplateAuthor,
             bestModel: tempTemplateBestModel || t_item.bestModel || "Nano Banana Pro",
-            baseImage: tempTemplateBaseImage || t_item.baseImage || "optional_base_image"
+            baseImage: tempTemplateBaseImage || t_item.baseImage || "optional_base_image",
+            videoUrl: tempVideoUrl !== undefined ? tempVideoUrl : t_item.videoUrl
           };
         }
         return t_item;

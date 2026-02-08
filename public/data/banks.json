@@ -5281,6 +5281,76 @@
           "en": "Multi-color combination (purple/cyan/blue mix)"
         }
       ]
+    },
+    "fight_style": {
+      "label": {
+        "cn": "打斗风格",
+        "en": "Fight Style"
+      },
+      "category": "action",
+      "options": [
+        {
+          "cn": "武侠飘逸风（轻功、剑气、衣袂飘飘）",
+          "en": "Wuxia elegant style (light kung fu, sword aura, flowing robes)"
+        },
+        {
+          "cn": "硬派写实格斗（拳拳到肉、真实打击感）",
+          "en": "Hardcore realistic combat (hard-hitting, raw impact)"
+        },
+        {
+          "cn": "暗杀潜行风（迅捷暗杀、一击致命）",
+          "en": "Stealth assassination style (swift kills, one-hit lethal)"
+        },
+        {
+          "cn": "港片动作风（成龙式、环境互动、幽默打斗）",
+          "en": "Hong Kong action style (Jackie Chan-esque, environmental interaction, comedic)"
+        },
+        {
+          "cn": "日式剑戟风（拔刀术、一刀流、静与动的对比）",
+          "en": "Japanese chambara style (iaijutsu, single-stroke, contrast of stillness and motion)"
+        },
+        {
+          "cn": "现代近身格斗（综合格斗、枪械近战混合）",
+          "en": "Modern close-quarters combat (MMA, gun-fu hybrid)"
+        },
+        {
+          "cn": "魔幻战斗风（元素法术、能量冲击波）",
+          "en": "Fantasy combat style (elemental magic, energy shockwaves)"
+        }
+      ]
+    },
+    "camera_rhythm": {
+      "label": {
+        "cn": "镜头节奏",
+        "en": "Camera Rhythm"
+      },
+      "category": "visual",
+      "options": [
+        {
+          "cn": "快速切换蒙太奇（多角度快速剪辑）",
+          "en": "Rapid montage cutting (multi-angle fast edits)"
+        },
+        {
+          "cn": "长镜头一镜到底（沉浸式跟随拍摄）",
+          "en": "Long take single shot (immersive follow-through)"
+        },
+        {
+          "cn": "慢动作特写穿插（关键瞬间减速）",
+          "en": "Slow-motion close-up intercuts (key moment deceleration)"
+        },
+        {
+          "cn": "环绕旋转跟拍（360度围绕主角运镜）",
+          "en": "Orbiting tracking shot (360° rotation around subject)"
+        },
+        {
+          "cn": "推拉变焦节奏（紧张感逐步递进）",
+          "en": "Push-pull zoom rhythm (gradually building tension)"
+        },
+        {
+          "cn": "稳定器跟拍配合手持晃动（动静结合）",
+          "en": "Stabilized tracking mixed with handheld shake (dynamic contrast)"
+        }
+      ]
     }
   },
   "defaults": {
@@ -5815,6 +5885,14 @@
     "construction_line_color": {
       "cn": "紫色/紫罗兰色（主构造线）",
       "en": "Purple/violet sketch lines (primary construction)"
+    },
+    "fight_style": {
+      "cn": "武侠飘逸风（轻功、剑气、衣袂飘飘）",
+      "en": "Wuxia elegant style (light kung fu, sword aura, flowing robes)"
+    },
+    "camera_rhythm": {
+      "cn": "快速切换蒙太奇（多角度快速剪辑）",
+      "en": "Rapid montage cutting (multi-angle fast edits)"
     }
   },
   "categories": {

@@ -1,11 +1,79 @@
-import React, { useRef } from 'react';
-import { Eye, Edit3, Copy, Check, ImageIcon, Pencil, ChevronLeft, ChevronRight, Plus, Trash2, LayoutGrid, Book } from 'lucide-react';
+import React, { useRef, useCallback } from 'react';
+import { Eye, Edit3, Copy, Check, X, ImageIcon, Pencil, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Plus, Trash2, LayoutGrid, Book, Play, Globe, Upload } from 'lucide-react';
 import { WaypointsIcon } from './icons/WaypointsIcon';
-import { getLocalized } from '../utils/helpers';
+import { getLocalized, getVideoEmbedInfo } from '../utils/helpers';
 import { TemplatePreview } from './TemplatePreview';
 import { VisualEditor } from './VisualEditor';
 import { EditorToolbar } from './EditorToolbar';
 import { PremiumButton } from './PremiumButton';
+
+/**
+ * HScrollArea — 支持鼠标滚轮横向滑动 + 左右翻页按钮
+ */
+const HScrollArea = ({ children, className = '', isDarkMode }) => {
+  const scrollRef = useRef(null);
+  const [showLeft, setShowLeft] = React.useState(false);
+  const [showRight, setShowRight] = React.useState(false);
+
+  const checkArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setShowLeft(el.scrollLeft > 4);
+    setShowRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+  }, []);
+
+  React.useEffect(() => {
+    checkArrows();
+    const el = scrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(checkArrows);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [checkArrows]);
+
+  const handleWheel = useCallback((e) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    if (el.scrollWidth <= el.clientWidth) return; // no overflow
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return; // native horizontal
+    e.preventDefault();
+    el.scrollBy({ left: e.deltaY, behavior: 'auto' });
+  }, []);
+
+  React.useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
+
+  const scroll = useCallback((dir) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * el.clientWidth * 0.7, behavior: 'smooth' });
+  }, []);
+
+  return (
+    <div className={`relative group/hscroll ${className}`}>
+      <div ref={scrollRef} onScroll={checkArrows}
+        className="flex overflow-x-auto gap-3 pb-1 scrollbar-hide scroll-smooth">
+        {children}
+      </div>
+      {showLeft && (
+        <button onClick={() => scroll(-1)}
+          className={`absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover/hscroll:opacity-90 transition-opacity ${isDarkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+          <ChevronLeft size={16} />
+        </button>
+      )}
+      {showRight && (
+        <button onClick={() => scroll(1)}
+          className={`absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover/hscroll:opacity-90 transition-opacity ${isDarkMode ? 'bg-gray-700 text-white hover:bg-gray-600' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>
+          <ChevronRight size={16} />
+        </button>
+      )}
+    </div>
+  );
+};
 
 /**
  * TemplateEditor 组件 - 整合模板编辑的所有UI元素
@@ -14,6 +82,7 @@ import { PremiumButton } from './PremiumButton';
 export const TemplateEditor = React.memo(({
   // ===== 模板数据 =====
   activeTemplate,
+  setSourceZoomedItem,
   banks,
   defaults,
   categories,
@@ -64,6 +133,8 @@ export const TemplateEditor = React.memo(({
   setTempTemplateBestModel,
   tempTemplateBaseImage,
   setTempTemplateBaseImage,
+  tempVideoUrl,
+  setTempVideoUrl,
 
   // ===== 标签编辑 =====
   handleUpdateTemplateTags,
@@ -105,6 +176,7 @@ export const TemplateEditor = React.memo(({
   setIsBanksDrawerOpen,
 }) => {
   const [activeSelect, setActiveSelect] = React.useState(null); // 'bestModel' | 'baseImage' | null
+  const [infoCollapsed, setInfoCollapsed] = React.useState(false);
   const selectRef = useRef(null);
 
   // 点击外部关闭下拉菜单
@@ -147,10 +219,54 @@ export const TemplateEditor = React.memo(({
     : ['cn', 'en'];
 
   const supportsChinese = templateLangs.includes('cn');
-  const supportsEnglish = templateLangs.includes('en');
-  const showLanguageToggle = templateLangs.length > 1;
+    const supportsEnglish = templateLangs.includes('en');
+    const showLanguageToggle = templateLangs.length > 1;
 
-  return (
+    // 辅助组件：渲染参考素材区域
+    const renderSourceAssets = () => (
+      <div className="flex flex-col gap-1">
+        <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+          {language === 'cn' ? '参考素材' : 'Sources'}
+        </label>
+        <HScrollArea isDarkMode={isDarkMode}>
+          {(activeTemplate.source || []).map((src, sIdx) => (
+            <div key={sIdx}
+              className={`flex-shrink-0 relative group/source rounded-lg border-2 transition-all cursor-zoom-in hover:scale-[1.03] ${isDarkMode ? 'border-white/5 bg-white/5' : 'border-gray-100 bg-gray-50'}`}
+              onClick={() => setSourceZoomedItem(src)}>
+              <div className={`${isMobileDevice ? 'w-[70px] h-[70px]' : 'w-[110px] h-[110px]'} overflow-hidden rounded-lg flex items-center justify-center`}>
+                {src.type === 'video' ? (
+                  getVideoEmbedInfo(src.url)?.platform === 'video' ? (
+                    <video src={src.url} className="w-full h-full object-cover" muted playsInline
+                      onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-black/20">
+                      <Play size={isMobileDevice ? 14 : 18} className="text-white/60" fill="currentColor" />
+                    </div>
+                  )
+                ) : (
+                  <img src={src.url} alt={`Source ${src.id || sIdx + 1}`} className="w-full h-full object-cover" />
+                )}
+              </div>
+              <button onClick={(e) => { e.stopPropagation(); const s = [...(activeTemplate.source || [])]; s.splice(sIdx, 1); updateTemplateProperty('source', s); }}
+                className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5 shadow-lg opacity-0 group-hover/source:opacity-100 transition-opacity z-[20]"><X size={10} /></button>
+            </div>
+          ))}
+          <div className={`flex-shrink-0 ${isMobileDevice ? 'w-[70px] h-[70px]' : 'w-[110px] h-[110px]'} rounded-lg border-2 border-dashed flex items-center justify-center gap-1 md:gap-2 ${isDarkMode ? 'border-white/10 text-gray-600' : 'border-gray-200 text-gray-400'}`}>
+            <button onClick={() => { setImageUpdateMode('add_source'); fileInputRef.current?.click(); }}
+              className={`flex flex-col items-center gap-1 p-1 md:p-2 rounded transition-all ${isDarkMode ? 'hover:bg-white/10 hover:text-orange-400' : 'hover:bg-orange-50 hover:text-orange-500'}`}>
+              <Upload size={isMobileDevice ? 12 : 16} /><span className="text-[7px] md:text-[8px] font-bold">{language === 'cn' ? '本地' : 'Local'}</span>
+            </button>
+            <div className={`w-px h-4 md:h-6 ${isDarkMode ? 'bg-white/10' : 'bg-gray-200'}`} />
+            <button onClick={() => { setImageUpdateMode('add_source'); setShowImageUrlInput(true); }}
+              className={`flex flex-col items-center gap-1 p-1 md:p-2 rounded transition-all ${isDarkMode ? 'hover:bg-white/10 hover:text-orange-400' : 'hover:bg-orange-50 hover:text-orange-500'}`}>
+              <Globe size={isMobileDevice ? 12 : 16} /><span className="text-[7px] md:text-[8px] font-bold">{language === 'cn' ? '链接' : 'URL'}</span>
+            </button>
+          </div>
+        </HScrollArea>
+      </div>
+    );
+
+    return (
     <div
       className={`
         ${(mobileTab === 'editor') ? 'flex fixed inset-0 z-30 md:static md:bg-transparent' : 'hidden'}
@@ -303,114 +419,246 @@ export const TemplateEditor = React.memo(({
                   />
                 </div>
 
-                {/* Edit Mode: Title & Author Inputs */}
-                <div className={`px-8 pt-6 pb-4 flex flex-col gap-4 border-b ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-gray-100/50 border-gray-200'}`}>
-                  <div className="flex flex-col gap-1.5">
-                    <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-                      {language === 'cn' ? '模版标题 (Title)' : 'Template Title'}
-                    </label>
-                    <input
-                      type="text"
-                      value={tempTemplateName}
-                      onChange={(e) => setTempTemplateName(e.target.value)}
-                      onBlur={saveTemplateName}
-                      className={`text-xl font-bold bg-transparent border-b-2 border-orange-500/20 focus:border-orange-500 focus:outline-none w-full pb-1 transition-all ${isDarkMode ? 'text-white' : 'text-gray-800'}`}
-                      placeholder={t('label_placeholder')}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-                      {language === 'cn' ? '作者 (Author)' : 'Author'}
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        value={tempTemplateAuthor}
-                        onChange={(e) => setTempTemplateAuthor(e.target.value)}
-                        onBlur={saveTemplateName}
-                        disabled={INITIAL_TEMPLATES_CONFIG.some(cfg => cfg.id === activeTemplate.id)}
-                        className={`text-sm font-bold bg-transparent border-b border-dashed focus:border-solid border-orange-500/30 focus:border-orange-500 focus:outline-none w-full pb-1 transition-all ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}
-                        placeholder={language === 'cn' ? '作者名称...' : 'Author name...'}
-                      />
-                      {INITIAL_TEMPLATES_CONFIG.some(cfg => cfg.id === activeTemplate.id) && (
-                        <p className="text-[10px] text-orange-500/50 font-bold italic mt-1">
-                          {language === 'cn' ? '* 系统模版作者不可修改' : '* System template author is read-only'}
-                        </p>
-                      )}
+                {/* Edit Mode: Collapsible Information & Assets Section */}
+                <div className={`border-b transition-all duration-300 ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-gray-100/50 border-gray-200'}`}>
+                  {/* Collapsed Summary Bar */}
+                  {infoCollapsed ? (
+                    <div 
+                      className={`flex items-center gap-3 px-6 py-2.5 cursor-pointer select-none hover:opacity-80 transition-opacity`}
+                      onClick={() => setInfoCollapsed(false)}
+                    >
+                      <ChevronDown size={14} className={`flex-shrink-0 ${isDarkMode ? 'text-orange-400' : 'text-orange-500'}`} />
+                      <span className={`text-sm font-bold truncate ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                        {tempTemplateName || (language === 'cn' ? '未命名模版' : 'Untitled')}
+                      </span>
+                      <span className={`text-[10px] font-bold opacity-40 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>|</span>
+                      <span className={`text-[10px] font-bold opacity-60 truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {tempTemplateAuthor || (language === 'cn' ? '未知作者' : 'Unknown')}
+                      </span>
+                      <span className={`text-[10px] font-bold opacity-40 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>|</span>
+                      <span className={`text-[10px] font-bold opacity-60 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                        {tempTemplateBestModel || '—'}
+                      </span>
+                      <span className={`ml-auto text-[10px] font-bold ${isDarkMode ? 'text-orange-400/60' : 'text-orange-500/60'}`}>
+                        {language === 'cn' ? '展开信息' : 'Expand'}
+                      </span>
                     </div>
-                  </div>
-
-                  {/* Best Model & Base Image Suggestion */}
-                  <div className="flex gap-4" ref={selectRef}>
-                    <div className="flex-1 flex flex-col gap-1.5 relative">
-                      <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-                        {t('best_model')}
-                      </label>
+                  ) : (
+                    /* Expanded Info Section — Left/Right layout */
+                    <div className={`${isMobileDevice ? 'px-4 pt-3 pb-3' : 'px-6 pt-4 pb-4'}`}>
+                      {/* Collapse button */}
                       <button
-                        onClick={() => setActiveSelect(activeSelect === 'bestModel' ? null : 'bestModel')}
-                        className={`text-sm font-bold bg-transparent border-b border-dashed border-orange-500/30 hover:border-orange-500 transition-all w-full pb-1 text-left flex items-center justify-between ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}
+                        onClick={() => setInfoCollapsed(true)}
+                        className={`flex items-center gap-1.5 mb-2 text-[10px] font-bold uppercase tracking-widest opacity-50 hover:opacity-100 transition-opacity ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}
                       >
-                        <span>{tempTemplateBestModel || t('please_select')}</span>
-                        <ChevronRight size={14} className={`transition-transform duration-200 ${activeSelect === 'bestModel' ? 'rotate-90' : ''}`} />
-                      </button>
-                      
-                      {activeSelect === 'bestModel' && (
-                        <div 
-                          className={`absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 border ${isDarkMode ? 'bg-[#2A2928] border-white/10' : 'bg-white border-gray-100'}`}
-                          style={{ backdropFilter: 'blur(20px)' }}
-                        >
-                          {['Nano Banana Pro', 'Midjourney V7', 'Zimage'].map((opt) => (
-                            <button
-                              key={opt}
-                              onClick={() => {
-                                updateTemplateProperty('bestModel', opt);
-                                setActiveSelect(null);
-                              }}
-                              className={`w-full text-left px-4 py-2.5 text-sm transition-all flex items-center justify-between ${tempTemplateBestModel === opt ? 'bg-orange-500/10 text-orange-500 font-bold' : (isDarkMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-gray-600 hover:bg-gray-50')}`}
-                            >
-                              {opt}
-                              {tempTemplateBestModel === opt && <Check size={14} />}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 flex flex-col gap-1.5 relative">
-                      <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>
-                        {t('base_image')}
-                      </label>
-                      <button
-                        onClick={() => setActiveSelect(activeSelect === 'baseImage' ? null : 'baseImage')}
-                        className={`text-sm font-bold bg-transparent border-b border-dashed border-orange-500/30 hover:border-orange-500 transition-all w-full pb-1 text-left flex items-center justify-between ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}
-                      >
-                        <span>{tempTemplateBaseImage ? t(tempTemplateBaseImage) : t('please_select')}</span>
-                        <ChevronRight size={14} className={`transition-transform duration-200 ${activeSelect === 'baseImage' ? 'rotate-90' : ''}`} />
+                        <ChevronUp size={12} />
+                        {language === 'cn' ? '折叠信息区' : 'Collapse'}
                       </button>
 
-                      {activeSelect === 'baseImage' && (
-                        <div 
-                          className={`absolute top-full left-0 right-0 mt-2 z-50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 border ${isDarkMode ? 'bg-[#2A2928] border-white/10' : 'bg-white border-gray-100'}`}
-                          style={{ backdropFilter: 'blur(20px)' }}
-                        >
-                          {['no_base_image', 'recommend_base_image', 'optional_base_image'].map((opt) => (
-                            <button
-                              key={opt}
-                              onClick={() => {
-                                updateTemplateProperty('baseImage', opt);
-                                setActiveSelect(null);
-                              }}
-                              className={`w-full text-left px-4 py-2.5 text-sm transition-all flex items-center justify-between ${tempTemplateBaseImage === opt ? 'bg-orange-500/10 text-orange-500 font-bold' : (isDarkMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-gray-600 hover:bg-gray-50')}`}
-                            >
-                              {t(opt)}
-                              {tempTemplateBaseImage === opt && <Check size={14} />}
-                            </button>
-                          ))}
+                      <div className={`flex flex-col ${isMobileDevice ? 'gap-4' : ''}`}>
+                        {/* Row 1: Text Info + Results */}
+                        <div className={`flex ${isMobileDevice ? 'gap-4' : 'gap-6'} items-start`}>
+                          {/* ===== LEFT: Text Info — 60% (Mobile) / 40% (Desktop) ===== */}
+                          <div className={`${isMobileDevice ? 'w-[60%]' : 'w-[40%]'} min-w-0 flex flex-col gap-3`}>
+                            {/* Text Info */}
+                            <div className={`flex flex-col ${isMobileDevice ? 'gap-1.5' : 'gap-2'}`}>
+                              {/* Title + Author — single row */}
+                              <div className={`grid ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-2'} ${isMobileDevice ? 'gap-1' : 'gap-2'}`}>
+                              <div className="flex flex-col gap-0.5">
+                                <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                  {language === 'cn' ? '标题' : 'Title'}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={tempTemplateName}
+                                  onChange={(e) => setTempTemplateName(e.target.value)}
+                                  onBlur={saveTemplateName}
+                                  className={`text-sm font-bold bg-transparent border-b-2 border-orange-500/20 focus:border-orange-500 focus:outline-none w-full pb-0.5 transition-all ${isDarkMode ? 'text-white' : 'text-gray-800'}`}
+                                  placeholder={t('label_placeholder')}
+                                />
+                              </div>
+                              <div className="flex flex-col gap-0.5">
+                                <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                  {language === 'cn' ? '作者' : 'Author'}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={tempTemplateAuthor}
+                                  onChange={(e) => setTempTemplateAuthor(e.target.value)}
+                                  onBlur={saveTemplateName}
+                                  disabled={INITIAL_TEMPLATES_CONFIG.some(cfg => cfg.id === activeTemplate.id)}
+                                  className={`text-sm font-bold bg-transparent border-b border-dashed focus:border-solid border-orange-500/30 focus:border-orange-500 focus:outline-none w-full pb-0.5 transition-all ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}
+                                  placeholder={language === 'cn' ? '作者...' : 'Author...'}
+                                />
+                              </div>
+                            </div>
+                            {INITIAL_TEMPLATES_CONFIG.some(cfg => cfg.id === activeTemplate.id) && (
+                              <p className="text-[9px] text-orange-500/50 font-bold italic -mt-1">{language === 'cn' ? '* 系统模版作者不可修改' : '* Read-only'}</p>
+                            )}
+                            <div className={`grid ${isMobileDevice ? 'grid-cols-1' : 'grid-cols-2'} ${isMobileDevice ? 'gap-1' : 'gap-2'}`} ref={selectRef}>
+                              <div className="flex flex-col gap-0.5 relative">
+                                {!isMobileDevice && <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{t('best_model')}</label>}
+                                <button onClick={() => setActiveSelect(activeSelect === 'bestModel' ? null : 'bestModel')}
+                                  className={`text-xs font-bold bg-transparent border-b border-dashed border-orange-500/30 hover:border-orange-500 transition-all w-full pb-0.5 text-left flex items-center justify-between ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                                  <span className="truncate">{tempTemplateBestModel || t('please_select')}</span>
+                                  <ChevronRight size={10} className={`flex-shrink-0 transition-transform duration-200 ${activeSelect === 'bestModel' ? 'rotate-90' : ''}`} />
+                                </button>
+                                {activeSelect === 'bestModel' && (
+                                  <div className={`absolute top-full left-0 right-0 mt-1 z-50 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 border ${isDarkMode ? 'bg-[#2A2928] border-white/10' : 'bg-white border-gray-100'}`} style={{ backdropFilter: 'blur(20px)' }}>
+                                    {(activeTemplate.type === 'video' ? ['Seedance 2.0', 'Veo 3.1', 'Kling 3.0'] : ['Nano Banana Pro', 'Midjourney V7', 'Zimage']).map((opt) => (
+                                      <button key={opt} onClick={() => { updateTemplateProperty('bestModel', opt); setActiveSelect(null); }}
+                                        className={`w-full text-left px-3 py-1.5 text-xs transition-all flex items-center justify-between ${tempTemplateBestModel === opt ? 'bg-orange-500/10 text-orange-500 font-bold' : (isDarkMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-gray-600 hover:bg-gray-50')}`}>
+                                        {opt}{tempTemplateBestModel === opt && <Check size={10} />}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex flex-col gap-0.5 relative">
+                                {!isMobileDevice && <label className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{t('base_image')}</label>}
+                                <button onClick={() => setActiveSelect(activeSelect === 'baseImage' ? null : 'baseImage')}
+                                  className={`text-xs font-bold bg-transparent border-b border-dashed border-orange-500/30 hover:border-orange-500 transition-all w-full pb-0.5 text-left flex items-center justify-between ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
+                                  <span className="truncate">{tempTemplateBaseImage ? t(tempTemplateBaseImage) : t('please_select')}</span>
+                                  <ChevronRight size={10} className={`flex-shrink-0 transition-transform duration-200 ${activeSelect === 'baseImage' ? 'rotate-90' : ''}`} />
+                                </button>
+                                {activeSelect === 'baseImage' && (
+                                  <div className={`absolute top-full left-0 right-0 mt-1 z-50 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 border ${isDarkMode ? 'bg-[#2A2928] border-white/10' : 'bg-white border-gray-100'}`} style={{ backdropFilter: 'blur(20px)' }}>
+                                    {['no_base_image', 'recommend_base_image', 'optional_base_image'].map((opt) => (
+                                      <button key={opt} onClick={() => { updateTemplateProperty('baseImage', opt); setActiveSelect(null); }}
+                                        className={`w-full text-left px-3 py-1.5 text-xs transition-all flex items-center justify-between ${tempTemplateBaseImage === opt ? 'bg-orange-500/10 text-orange-500 font-bold' : (isDarkMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-gray-600 hover:bg-gray-50')}`}>
+                                        {t(opt)}{tempTemplateBaseImage === opt && <Check size={10} />}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Source Assets - Desktop only here */}
+                          {!isMobileDevice && renderSourceAssets()}
                         </div>
-                      )}
+
+                          {/* ===== RIGHT: Result Preview — 40% (Mobile) / 60% (Desktop) ===== */}
+                          <div className={`${isMobileDevice ? 'w-[40%]' : 'w-[60%]'} min-w-0 flex flex-col`}>
+                            <HScrollArea isDarkMode={isDarkMode}>
+                            {activeTemplate.type === 'video' ? (
+                              <>
+                                {/* Video result — label + card */}
+                                <div className="flex-shrink-0 flex flex-col gap-1">
+                                  <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    {language === 'cn' ? '成果预览' : 'Results'}
+                                  </label>
+                                  {tempVideoUrl ? (
+                                    <div className={`relative group/v-result rounded-lg border-2 transition-all cursor-zoom-in hover:scale-[1.02] ${isDarkMode ? 'border-white/5 bg-white/5' : 'border-gray-100 bg-gray-50'}`}
+                                      onClick={() => setSourceZoomedItem({ url: tempVideoUrl, type: 'video' })}>
+                                      <div className={`${isMobileDevice ? 'w-[140px] h-[140px]' : 'w-[270px] h-[270px]'} overflow-hidden rounded-lg flex items-center justify-center`}>
+                                        {getVideoEmbedInfo(tempVideoUrl)?.platform === 'video' ? (
+                                          <video src={tempVideoUrl} className="w-full h-full object-cover" muted playsInline
+                                            onMouseEnter={e => e.target.play()} onMouseLeave={e => { e.target.pause(); e.target.currentTime = 0; }} />
+                                        ) : (
+                                          <div className="w-full h-full flex items-center justify-center bg-black/20">
+                                            <Play size={isMobileDevice ? 24 : 40} className="text-white/60" fill="currentColor" />
+                                          </div>
+                                        )}
+                                      </div>
+                                      <div className={`absolute bottom-0 inset-x-0 text-center py-0.5 md:py-1 text-[8px] md:text-[9px] font-bold rounded-b-lg ${isDarkMode ? 'bg-black/50 text-white/50' : 'bg-black/30 text-white/80'}`}>{language === 'cn' ? '视频' : 'Video'}</div>
+                                      <button onClick={(e) => { e.stopPropagation(); setImageUpdateMode('replace_video_url'); fileInputRef.current?.click(); }}
+                                        className="absolute top-2 left-2 md:top-3 md:left-3 bg-white/80 hover:bg-white text-gray-800 rounded-full p-1.5 md:p-2 shadow-lg opacity-0 group-hover/v-result:opacity-100 transition-opacity z-[20]"><Upload size={isMobileDevice ? 12 : 18} /></button>
+                                      <button onClick={(e) => { e.stopPropagation(); setTempVideoUrl(''); updateTemplateProperty('videoUrl', ''); }}
+                                        className="absolute top-2 right-2 md:top-3 md:right-3 bg-red-500 text-white rounded-full p-1.5 md:p-2 shadow-lg opacity-0 group-hover/v-result:opacity-100 transition-opacity z-[20]"><X size={isMobileDevice ? 12 : 18} /></button>
+                                    </div>
+                                  ) : (
+                                    <div className={`w-[140px] h-[140px] md:w-[270px] md:h-[270px] rounded-lg border-2 border-dashed flex items-center justify-center gap-3 md:gap-6 ${isDarkMode ? 'border-white/10 text-gray-600' : 'border-gray-200 text-gray-400'}`}>
+                                      <button onClick={() => { setImageUpdateMode('replace_video_url'); fileInputRef.current?.click(); }}
+                                        className={`flex flex-col items-center gap-1.5 md:gap-3 p-2 md:p-4 rounded transition-all ${isDarkMode ? 'hover:bg-white/10 hover:text-orange-400' : 'hover:bg-orange-50 hover:text-orange-500'}`}>
+                                        <Upload size={isMobileDevice ? 18 : 32} /><span className="text-[10px] md:text-xs font-bold">{language === 'cn' ? '本地' : 'Local'}</span>
+                                      </button>
+                                      <div className={`w-px h-6 md:h-12 ${isDarkMode ? 'bg-white/10' : 'bg-gray-200'}`} />
+                                      <button onClick={() => { setImageUpdateMode('replace_video_url'); setShowImageUrlInput(true); }}
+                                        className={`flex flex-col items-center gap-1.5 md:gap-3 p-2 md:p-4 rounded transition-all ${isDarkMode ? 'hover:bg-white/10 hover:text-orange-400' : 'hover:bg-orange-50 hover:text-orange-500'}`}>
+                                        <Globe size={isMobileDevice ? 18 : 32} /><span className="text-[10px] md:text-xs font-bold">{language === 'cn' ? '链接' : 'URL'}</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Cover image — label + card */}
+                                <div className="flex-shrink-0 flex flex-col gap-1">
+                                  <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    {language === 'cn' ? '封面' : 'Cover'}
+                                  </label>
+                                  {activeTemplate.imageUrl ? (
+                                    <div className={`relative group/cover rounded-lg border-2 transition-all cursor-zoom-in hover:scale-[1.02] ${isDarkMode ? 'border-white/5 bg-white/5' : 'border-gray-100 bg-gray-50'}`}
+                                      onClick={() => setSourceZoomedItem({ url: activeTemplate.imageUrl, type: 'image' })}>
+                                      <div className={`${isMobileDevice ? 'w-[140px] h-[140px]' : 'w-[270px] h-[270px]'} overflow-hidden rounded-lg`}>
+                                        <img src={activeTemplate.imageUrl} alt="Cover" className="w-full h-full object-cover" />
+                                      </div>
+                                      <button onClick={(e) => { e.stopPropagation(); setImageUpdateMode('replace_cover'); fileInputRef.current?.click(); }}
+                                        className="absolute top-2 left-2 md:top-3 md:left-3 bg-white/80 hover:bg-white text-gray-800 rounded-full p-1.5 md:p-2 shadow-lg opacity-0 group-hover/cover:opacity-100 transition-opacity z-[20]"><Upload size={isMobileDevice ? 12 : 18} /></button>
+                                      <button onClick={(e) => { e.stopPropagation(); updateTemplateProperty('imageUrl', ''); }}
+                                        className="absolute top-2 right-2 md:top-3 md:right-3 bg-red-500 text-white rounded-full p-1.5 md:p-2 shadow-lg opacity-0 group-hover/cover:opacity-100 transition-opacity z-[20]"><X size={isMobileDevice ? 12 : 18} /></button>
+                                    </div>
+                                  ) : (
+                                    <div className={`w-[140px] h-[140px] md:w-[270px] md:h-[270px] rounded-lg border-2 border-dashed flex items-center justify-center gap-3 md:gap-6 ${isDarkMode ? 'border-white/10 text-gray-600' : 'border-gray-200 text-gray-400'}`}>
+                                      <button onClick={() => { setImageUpdateMode('replace_cover'); fileInputRef.current?.click(); }}
+                                        className={`flex flex-col items-center gap-1.5 md:gap-3 p-2 md:p-4 rounded transition-all ${isDarkMode ? 'hover:bg-white/10 hover:text-orange-400' : 'hover:bg-orange-50 hover:text-orange-500'}`}>
+                                        <Upload size={isMobileDevice ? 18 : 32} /><span className="text-[10px] md:text-xs font-bold">{language === 'cn' ? '本地' : 'Local'}</span>
+                                      </button>
+                                      <div className={`w-px h-6 md:h-12 ${isDarkMode ? 'bg-white/10' : 'bg-gray-200'}`} />
+                                      <button onClick={() => { setImageUpdateMode('replace_cover'); setShowImageUrlInput(true); }}
+                                        className={`flex flex-col items-center gap-1.5 md:gap-3 p-2 md:p-4 rounded transition-all ${isDarkMode ? 'hover:bg-white/10 hover:text-orange-400' : 'hover:bg-orange-50 hover:text-orange-500'}`}>
+                                        <Globe size={isMobileDevice ? 18 : 32} /><span className="text-[10px] md:text-xs font-bold">{language === 'cn' ? '链接' : 'URL'}</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex-shrink-0 flex flex-col gap-1">
+                                  <label className={`text-[10px] font-black uppercase tracking-widest opacity-40 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                                    {language === 'cn' ? '成果展示' : 'Result Previews'}
+                                  </label>
+                                  <div className="flex gap-3">
+                                {(activeTemplate.imageUrls && activeTemplate.imageUrls.length > 0 ? activeTemplate.imageUrls : (activeTemplate.imageUrl ? [activeTemplate.imageUrl] : [])).map((url, idx) => (
+                                  <div key={idx}
+                                    className={`flex-shrink-0 relative group/result rounded-lg border-2 transition-all cursor-zoom-in hover:scale-[1.02] ${isDarkMode ? 'border-white/5 bg-white/5' : 'border-gray-100 bg-gray-50'}`}
+                                    onClick={() => setSourceZoomedItem({ url, type: 'image' })}>
+                                    <div className={`${isMobileDevice ? 'w-[140px] h-[140px]' : 'w-[270px] h-[270px]'} overflow-hidden rounded-lg`}>
+                                      <img src={url} alt={`Result ${idx + 1}`} className="w-full h-full object-cover" />
+                                    </div>
+                                    <button onClick={(e) => { e.stopPropagation(); setImageUpdateMode('replace'); setCurrentImageEditIndex(idx); fileInputRef.current?.click(); }}
+                                      className="absolute top-2 left-2 md:top-3 md:left-3 bg-white/80 hover:bg-white text-gray-800 rounded-full p-1.5 md:p-2 shadow-lg opacity-0 group-hover/result:opacity-100 transition-opacity z-[20]"><Upload size={isMobileDevice ? 12 : 18} /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); requestDeleteImage(e, idx); }}
+                                      className="absolute top-2 right-2 md:top-3 md:right-3 bg-red-500 text-white rounded-full p-1.5 md:p-2 shadow-lg opacity-0 group-hover/result:opacity-100 transition-opacity z-[20]"><X size={isMobileDevice ? 12 : 18} /></button>
+                                  </div>
+                                ))}
+                                <div className={`flex-shrink-0 w-[140px] h-[140px] md:w-[270px] md:h-[270px] rounded-lg border-2 border-dashed flex items-center justify-center gap-3 md:gap-6 ${isDarkMode ? 'border-white/10 text-gray-600' : 'border-gray-200 text-gray-400'}`}>
+                                  <button onClick={() => { setImageUpdateMode('add'); fileInputRef.current?.click(); }}
+                                    className={`flex flex-col items-center gap-1.5 md:gap-3 p-2 md:p-4 rounded transition-all ${isDarkMode ? 'hover:bg-white/10 hover:text-orange-400' : 'hover:bg-orange-50 hover:text-orange-500'}`}>
+                                    <Upload size={isMobileDevice ? 18 : 32} /><span className="text-[10px] md:text-xs font-bold">{language === 'cn' ? '本地' : 'Local'}</span>
+                                  </button>
+                                  <div className={`w-px h-6 md:h-12 ${isDarkMode ? 'bg-white/10' : 'bg-gray-200'}`} />
+                                  <button onClick={() => { setImageUpdateMode('add'); setShowImageUrlInput(true); }}
+                                    className={`flex flex-col items-center gap-1.5 md:gap-3 p-2 md:p-4 rounded transition-all ${isDarkMode ? 'hover:bg-white/10 hover:text-orange-400' : 'hover:bg-orange-50 hover:text-orange-500'}`}>
+                                    <Globe size={isMobileDevice ? 18 : 32} /><span className="text-[10px] md:text-xs font-bold">{language === 'cn' ? '链接' : 'URL'}</span>
+                                  </button>
+                                </div>
+                                  </div>
+                                </div>
+                              </>
+                            )}
+                          </HScrollArea>
+                        </div>
+                      </div>
+
+                      {/* Row 2: Source Assets (Mobile only) */}
+                      {isMobileDevice && renderSourceAssets()}
                     </div>
                   </div>
-                </div>
+                )}
+              </div>
 
                 {/* Visual Editor Area Container */}
                 <div className="flex-1 relative overflow-hidden">
@@ -436,6 +684,7 @@ export const TemplateEditor = React.memo(({
                       activeTemplate={activeTemplate}
                       language={language}
                       t={t}
+                      onInteraction={() => isMobileDevice && !infoCollapsed && setInfoCollapsed(true)}
                     />
                   </div>
 
@@ -458,7 +707,9 @@ export const TemplateEditor = React.memo(({
                 {/* Content Area with Shimmer Effect */}
                 <div className={`flex-1 overflow-hidden flex flex-col ${isSmartSplitLoading ? 'text-processing-mask' : ''}`}>
                   <TemplatePreview
+                    key={activeTemplate.id}
                     activeTemplate={activeTemplate}
+                    setSourceZoomedItem={setSourceZoomedItem}
                     banks={banks}
                     defaults={defaults}
                     categories={categories}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { AppStoreIcon } from './icons/AppStoreIcon';
 import { GithubIcon } from './icons/GithubIcon';
 import { HomeIcon } from './icons/HomeIcon';
 import { ListIcon } from './icons/ListIcon';
@@ -193,6 +194,17 @@ export const Sidebar = ({
           >
             <SettingsIcon size={24} />
           </Link>
+        </Tooltip>
+
+        <Tooltip content="App Store" isDarkMode={isDarkMode}>
+          <a
+            href="https://apps.apple.com/cn/app/%E6%8F%90%E7%A4%BA%E8%AF%8D%E5%A1%AB%E7%A9%BA%E5%99%A8/id6758574801"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`p-2 transition-colors ${isDarkMode ? 'text-[#8E9196]' : 'text-[#6B7280]'} hover:text-[#F97316]`}
+          >
+            <AppStoreIcon size={24} />
+          </a>
         </Tooltip>
 
         <Tooltip content="Github" isDarkMode={isDarkMode}>

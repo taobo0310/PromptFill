@@ -2,15 +2,16 @@ import React, { useMemo, useRef } from 'react';
 import { Variable } from './Variable';
 import { VisualEditor } from './VisualEditor';
 import { EditorToolbar } from './EditorToolbar';
-import { ImageIcon, ArrowUpRight, Upload, Globe, RotateCcw, Pencil, Check, X, ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
+import { ImageIcon, ArrowUpRight, Upload, Globe, RotateCcw, Pencil, Check, X, ChevronLeft, ChevronRight, Plus, Trash2, Play } from 'lucide-react';
 import { WaypointsIcon } from './icons/WaypointsIcon';
-import { getLocalized } from '../utils/helpers';
+import { getLocalized, getVideoEmbedInfo } from '../utils/helpers';
 
 /**
  * TemplatePreview 组件 - 负责渲染模版的预览内容，包括变量交互
  */
 export const TemplatePreview = React.memo(({
   activeTemplate,
+  setSourceZoomedItem,
   banks,
   defaults,
   categories,
@@ -86,6 +87,7 @@ export const TemplatePreview = React.memo(({
   }, []);
 
   const [editImageIndex, setEditImageIndex] = React.useState(0);
+  const [videoLoading, setVideoLoading] = React.useState(!!activeTemplate.videoUrl);
   const previewShareIconRef = React.useRef(null);
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
@@ -94,6 +96,9 @@ export const TemplatePreview = React.memo(({
     'Nano Banana Pro': 'text-blue-600/90 dark:text-blue-400/90',
     'Midjourney V7': 'text-violet-600/90 dark:text-violet-400/90',
     'Zimage': 'text-emerald-600/90 dark:text-emerald-400/90',
+    'Seedance 2.0': 'text-orange-600/90 dark:text-orange-400/90',
+    'Veo 3.1': 'text-rose-600/90 dark:text-rose-400/90',
+    'Kling 3.0': 'text-cyan-600/90 dark:text-cyan-400/90',
   };
 
   const BASE_IMAGE_COLORS = {
@@ -148,6 +153,7 @@ export const TemplatePreview = React.memo(({
 
   React.useEffect(() => {
     setEditImageIndex(0);
+    if (activeTemplate.videoUrl) setVideoLoading(true);
   }, [activeTemplate.id]);
 
   const templateLangs = activeTemplate.language ? (Array.isArray(activeTemplate.language) ? activeTemplate.language : [activeTemplate.language]) : ['cn', 'en'];
@@ -163,6 +169,8 @@ export const TemplatePreview = React.memo(({
   const supportsChinese = templateLangs.includes('cn');
   const supportsEnglish = templateLangs.includes('en');
   const showLanguageToggle = templateLangs.length > 1;
+  const isVideo = activeTemplate.type === 'video';
+  const sources = activeTemplate.source || [];
 
   // 变量解析工具函数：从变量名中提取 baseKey 和 groupId
   const parseVariableName = (varName) => {
@@ -347,7 +355,7 @@ export const TemplatePreview = React.memo(({
         <div className="w-full h-full overflow-y-auto px-3 py-4 md:px-4 lg:p-8 custom-scrollbar relative z-10">
             <div 
                 id="preview-card"
-                className={`max-w-4xl mx-auto p-4 sm:p-6 md:p-8 lg:p-12 min-h-[500px] md:min-h-[600px] transition-all duration-500 relative ${isMobile ? (isDarkMode ? 'bg-[#242120]/90 border border-white/5 rounded-2xl shadow-2xl overflow-visible' : 'bg-white/90 border border-white/60 rounded-2xl shadow-xl overflow-visible') : (isDarkMode ? 'bg-black/20 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl' : 'bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 shadow-sm')}`}
+                className={`${isVideo && !isEditing ? 'max-w-none w-full' : 'max-w-4xl'} mx-auto p-4 sm:p-6 md:p-8 lg:p-12 min-h-[500px] md:min-h-[600px] transition-all duration-500 relative ${isMobile ? (isDarkMode ? 'bg-[#242120]/90 border border-white/5 rounded-2xl shadow-2xl overflow-visible' : 'bg-white/90 border border-white/60 rounded-2xl shadow-xl overflow-visible') : (isDarkMode ? 'bg-black/20 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl' : 'bg-white/40 backdrop-blur-sm rounded-2xl border border-white/40 shadow-sm')}`}
             >
                 {/* 移动端模版内语言切换 */}
                 {isMobile && showLanguageToggle && (
@@ -387,6 +395,148 @@ export const TemplatePreview = React.memo(({
                         />
                     </div>
                 )}
+                {isVideo && !isEditing ? (
+                  /* ========== VIDEO TEMPLATE LAYOUT (match image preview style) ========== */
+                  <div className="flex flex-col lg:flex-row gap-10 mb-10 items-start">
+                    {/* Left: Big Video Player & Source Assets */}
+                    <div className="flex-1 w-full min-w-0">
+                      <div className={`p-1.5 md:p-2 rounded-lg md:rounded-xl shadow-md md:shadow-lg border transition-all duration-300 ${isDarkMode ? 'bg-[#2A2726] border-white/5' : 'bg-white border-gray-100/50'}`}>
+                        <div className={`relative overflow-hidden rounded-md md:rounded-lg w-full ${isDarkMode ? 'bg-black/20' : 'bg-gray-50'}`}>
+                          {videoLoading && activeTemplate.videoUrl && (
+                            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 backdrop-blur-sm rounded-md">
+                              <div className="flex flex-col items-center gap-3">
+                                <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                                <span className="text-xs font-bold text-white/70">{language === 'cn' ? '视频加载中...' : 'Loading video...'}</span>
+                              </div>
+                            </div>
+                          )}
+                          {activeTemplate.videoUrl ? (
+                            getVideoEmbedInfo(activeTemplate.videoUrl)?.isEmbed ? (
+                              <div className="w-full aspect-video">
+                                <iframe
+                                  key={activeTemplate.id + '_embed'}
+                                  src={getVideoEmbedInfo(activeTemplate.videoUrl).embedUrl}
+                                  className="w-full h-full border-0 rounded-md shadow-lg"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                  allowFullScreen
+                                  title="Video Preview"
+                                  onLoad={() => setVideoLoading(false)}
+                                />
+                              </div>
+                            ) : (
+                              <video 
+                                key={activeTemplate.id + '_video'}
+                                src={activeTemplate.videoUrl}
+                                poster={currentImageUrl}
+                                controls
+                                playsInline
+                                className="w-full h-auto block rounded-md max-h-[50vh] object-contain mx-auto"
+                                onClick={(e) => e.stopPropagation()}
+                                onLoadedData={() => setVideoLoading(false)}
+                                onCanPlay={() => setVideoLoading(false)}
+                              />
+                            )
+                          ) : (
+                            <div className={`w-full aspect-video flex flex-col items-center justify-center ${isDarkMode ? 'text-gray-700' : 'text-gray-300'}`}>
+                              <Play size={48} strokeWidth={1.5} />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Source Assets below video */}
+                        {sources.length > 0 && (
+                          <div className="mt-4 px-1">
+                            <label className={`text-[10px] font-black uppercase tracking-widest mb-3 block opacity-40 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                              {language === 'cn' ? '参考素材 (SOURCE ASSETS)' : 'Source Assets'}
+                            </label>
+                            <div className="overflow-x-auto custom-scrollbar pb-2" style={{ scrollbarWidth: 'thin' }}>
+                              <div className="flex gap-3 w-max">
+                                {sources.map((src, sIdx) => (
+                                  <div 
+                                    key={sIdx}
+                                    className={`relative group/source rounded-lg overflow-hidden border-2 transition-all hover:scale-105 hover:shadow-lg flex-shrink-0 ${isDarkMode ? 'border-white/5 bg-white/5' : 'border-white bg-gray-50'}`}
+                                    onClick={() => src.url && setSourceZoomedItem(src)}
+                                  >
+                                    <div className="w-24 h-24 md:w-32 md:h-32 overflow-hidden flex items-center justify-center cursor-zoom-in">
+                                      {src.type === 'video' ? (
+                                        <div className="relative w-full h-full flex items-center justify-center bg-black/20">
+                                          <Play size={24} className="text-white/60" fill="currentColor" />
+                                        </div>
+                                      ) : (
+                                        <img 
+                                          src={src.url} 
+                                          alt={getLocalized(src.label, language) || `Source ${sIdx + 1}`}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      )}
+                                    </div>
+                                    {src.label && (
+                                      <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm py-1.5 px-2 opacity-0 group-hover/source:opacity-100 transition-opacity">
+                                        <p className="text-[10px] text-white font-bold truncate text-center">
+                                          {getLocalized(src.label, language)}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Right: Meta Info & Actions */}
+                    <div className="w-full lg:w-[360px] flex-shrink-0 flex flex-col gap-6 pt-2">
+                      <div className="flex flex-col gap-3 group/title-edit">
+                        <h2 className={`text-3xl md:text-4xl font-black tracking-tight leading-tight ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          {getLocalized(activeTemplate.name, language) || "Untitled Template"}
+                        </h2>
+                        {activeTemplate.author && (
+                          <div className="mb-1.5 opacity-70">
+                            <span className="text-sm font-bold tracking-wide text-white/90">
+                              {activeTemplate.author === '官方' ? t('official') : activeTemplate.author}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Tags */}
+                      <div className="flex flex-wrap gap-2 opacity-80">
+                        {(activeTemplate.tags || []).map(tag => (
+                          <span key={tag} className={`px-2 py-0.5 md:px-3 md:py-1 rounded-lg text-[10px] md:text-[11px] font-bold tracking-wider uppercase ${TAG_STYLES[tag] || TAG_STYLES["default"]}`}>
+                            {displayTag(tag)}
+                          </span>
+                        ))}
+                      </div>
+
+                      {/* Best Model & Base Image (no card background) */}
+                      <div className="flex flex-col gap-4">
+                        {activeTemplate.bestModel && (
+                          <div className="flex flex-col gap-1.5">
+                            <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDarkMode ? 'text-white/20' : 'text-gray-400'}`}>
+                              {t('best_model')}
+                            </span>
+                            <span className={`text-xs font-bold ${MODEL_COLORS[activeTemplate.bestModel] || 'text-gray-500'}`}>
+                              {activeTemplate.bestModel}
+                            </span>
+                          </div>
+                        )}
+                        {activeTemplate.baseImage && (
+                          <div className="flex flex-col gap-1.5">
+                            <span className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDarkMode ? 'text-white/20' : 'text-gray-400'}`}>
+                              {t('base_image')}
+                            </span>
+                            <span className={`text-xs font-bold ${BASE_IMAGE_COLORS[activeTemplate.baseImage] || 'text-gray-500'}`}>
+                              {t(activeTemplate.baseImage)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                /* ========== IMAGE / EDITING TEMPLATE LAYOUT (original) ========== */
                 <div className={`flex flex-col md:flex-row justify-between items-start mb-6 md:mb-10 relative ${isEditing ? 'border-b pb-8' : ''} ${isDarkMode ? 'border-white/5' : 'border-gray-100'}`}>
                     {/* Left: Title & Meta Info */}
                     <div className="flex-1 min-w-0 pr-4 z-10 pt-2">
@@ -442,7 +592,7 @@ export const TemplatePreview = React.memo(({
                               className={`absolute top-full left-0 right-0 mt-2 z-[100] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200 border ${isDarkMode ? 'bg-[#2A2928] border-white/10' : 'bg-white border-gray-100'}`}
                               style={{ backdropFilter: 'blur(20px)' }}
                             >
-                              {['Nano Banana Pro', 'Midjourney V7', 'Zimage'].map((opt) => (
+                              {['Nano Banana Pro', 'Midjourney V7', 'Zimage', 'Seedance 2.0', 'Veo 3.1', 'Kling 3.0'].map((opt) => (
                                 <button
                                   key={opt}
                                   onClick={() => {
@@ -598,6 +748,59 @@ export const TemplatePreview = React.memo(({
                             )}
                         </div>
 
+                        {/* Source Assets Section (hidden for video templates - shown below video instead) */}
+                        {!isVideo && sources.length > 0 && (
+                            <div className="mb-6 animate-in fade-in slide-in-from-left-2 duration-500">
+                                <label className={`text-[10px] font-black uppercase tracking-widest mb-3 block opacity-40 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                    {language === 'cn' ? '参考素材 (SOURCE ASSETS)' : 'Source Assets'}
+                                </label>
+                                <div className="flex flex-wrap gap-3">
+                                    {sources.map((src, sIdx) => (
+                                        <div 
+                                            key={sIdx}
+                                            className={`relative group/source rounded-xl overflow-hidden border-2 transition-all hover:scale-105 hover:shadow-lg ${isDarkMode ? 'border-white/5 bg-white/5' : 'border-white bg-gray-50'}`}
+                                            onClick={() => src.url && setSourceZoomedItem(src)}
+                                        >
+                                            <div className="w-28 h-28 md:w-36 md:h-36 overflow-hidden flex items-center justify-center cursor-zoom-in">
+                                                {src.type === 'video' ? (
+                                                    getVideoEmbedInfo(src.url)?.platform === 'video' ? (
+                                                        <video 
+                                                            src={src.url} 
+                                                            className="w-full h-full object-cover" 
+                                                            muted 
+                                                            playsInline
+                                                            onMouseEnter={e => e.target.play()}
+                                                            onMouseLeave={e => {
+                                                                e.target.pause();
+                                                                e.target.currentTime = 0;
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <div className="relative w-full h-full flex items-center justify-center bg-black/20">
+                                                            <Play size={24} className="text-white/60" fill="currentColor" />
+                                                        </div>
+                                                    )
+                                                ) : (
+                                                    <img 
+                                                        src={src.url} 
+                                                        alt={getLocalized(src.label, language) || `Source ${sIdx + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                )}
+                                            </div>
+                                            {src.label && (
+                                                <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm py-1.5 px-2 opacity-0 group-hover/source:opacity-100 transition-opacity">
+                                                    <p className="text-[10px] text-white font-bold truncate text-center">
+                                                        {getLocalized(src.label, language)}
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Editing Tags UI */}
                         {editingTemplateTags?.id === activeTemplate.id && (
                             <div className={`mb-6 p-4 backdrop-blur-sm rounded-2xl border shadow-sm flex flex-col gap-3 animate-in fade-in slide-in-from-top-2 duration-300 ${isDarkMode ? 'bg-black/20 border-white/10' : 'bg-white/50 border-orange-100'}`}>
@@ -658,15 +861,49 @@ export const TemplatePreview = React.memo(({
                         )}
                     </div>
 
-                    {/* Right: Image (Overhanging) */}
+                    {/* Right: Image (Overhanging for images, full-width for video) */}
                     <div 
-                        className="w-full md:w-auto mt-4 md:mt-0 relative md:-mr-[80px] md:-mt-[50px] z-20 flex-shrink-0"
+                        className={`w-full mt-4 md:mt-0 relative z-20 ${isVideo ? 'md:flex-1 md:min-w-0' : 'md:w-auto flex-shrink-0 md:-mr-[80px] md:-mt-[50px]'}`}
                     >
                         <div 
-                            className={`p-1.5 md:p-2 rounded-lg md:rounded-xl shadow-md md:shadow-lg transform md:rotate-2 border transition-all duration-300 hover:rotate-0 hover:scale-105 group/image w-full md:w-auto ${isDarkMode ? 'bg-[#2A2726] border-white/5' : 'bg-white border-gray-100/50'}`}
+                            className={`p-1.5 md:p-2 rounded-lg md:rounded-xl shadow-md md:shadow-lg border transition-all duration-300 group/image w-full ${isVideo ? '' : 'md:w-auto transform md:rotate-2 hover:rotate-0 hover:scale-105'} ${isDarkMode ? 'bg-[#2A2726] border-white/5' : 'bg-white border-gray-100/50'}`}
                         >
-                            <div className={`relative overflow-hidden rounded-md md:rounded-lg flex items-center justify-center min-w-[150px] min-h-[150px] ${!currentImageUrl ? 'w-full md:w-[400px] h-[400px]' : ''} ${isDarkMode ? 'bg-black/20' : 'bg-gray-50'}`}>
-                                {currentImageUrl ? (
+                            <div className={`relative overflow-hidden rounded-md md:rounded-lg flex items-center justify-center ${isVideo ? 'w-full' : `min-w-[150px] min-h-[150px] ${!currentImageUrl && !activeTemplate.videoUrl ? 'w-full md:w-[400px] h-[400px]' : ''}`} ${isDarkMode ? 'bg-black/20' : 'bg-gray-50'}`}>
+                                {isVideo && videoLoading && activeTemplate.videoUrl && (
+                                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/30 backdrop-blur-sm rounded-md">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+                                            <span className="text-xs font-bold text-white/70">{language === 'cn' ? '视频加载中...' : 'Loading video...'}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {isVideo && activeTemplate.videoUrl ? (
+                                    getVideoEmbedInfo(activeTemplate.videoUrl)?.isEmbed ? (
+                                        <div className="w-full aspect-video">
+                                            <iframe
+                                                key={activeTemplate.id + '_embed_edit'}
+                                                src={getVideoEmbedInfo(activeTemplate.videoUrl).embedUrl}
+                                                className="w-full h-full border-0 rounded-md shadow-lg"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                allowFullScreen
+                                                title="Video Preview"
+                                                onLoad={() => setVideoLoading(false)}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <video 
+                                            key={activeTemplate.id + '_video_edit'}
+                                            src={activeTemplate.videoUrl}
+                                            poster={currentImageUrl}
+                                            controls
+                                            playsInline
+                                            className="w-full h-auto block rounded-md"
+                                            onClick={(e) => e.stopPropagation()}
+                                            onLoadedData={() => setVideoLoading(false)}
+                                            onCanPlay={() => setVideoLoading(false)}
+                                        />
+                                    )
+                                ) : currentImageUrl ? (
                                     <img 
                                         key={currentImageUrl}
                                         src={currentImageUrl} 
@@ -703,47 +940,49 @@ export const TemplatePreview = React.memo(({
                                     </div>
                                 )}
                                 
-                                <div className={`absolute inset-0 bg-black/0 ${currentImageUrl ? 'group-hover/image:bg-black/20' : 'group-hover/image:bg-black/5'} transition-colors duration-300 flex items-center justify-center gap-2 opacity-0 group-hover/image:opacity-100`}>
-                                    {currentImageUrl && (
+                                {!isVideo && (
+                                    <div className={`absolute inset-0 bg-black/0 ${currentImageUrl ? 'group-hover/image:bg-black/20' : 'group-hover/image:bg-black/5'} transition-colors duration-300 flex items-center justify-center gap-2 opacity-0 group-hover/image:opacity-100`}>
+                                        {currentImageUrl && (
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setZoomedImage(currentImageUrl); }}
+                                                className={`p-2.5 rounded-full transition-all shadow-lg ${isDarkMode ? 'bg-black/60 text-gray-300 hover:bg-black hover:text-orange-400' : 'bg-white/90 text-gray-700 hover:bg-white hover:text-orange-600'}`}
+                                                title="查看大图"
+                                            >
+                                                <ArrowUpRight size={18} />
+                                            </button>
+                                        )}
                                         <button 
-                                            onClick={(e) => { e.stopPropagation(); setZoomedImage(currentImageUrl); }}
+                                            onClick={(e) => { e.stopPropagation(); setImageUpdateMode('replace'); fileInputRef.current?.click(); }}
                                             className={`p-2.5 rounded-full transition-all shadow-lg ${isDarkMode ? 'bg-black/60 text-gray-300 hover:bg-black hover:text-orange-400' : 'bg-white/90 text-gray-700 hover:bg-white hover:text-orange-600'}`}
-                                            title="查看大图"
+                                            title="更换当前图片(本地)"
                                         >
-                                            <ArrowUpRight size={18} />
+                                            <Upload size={18} />
                                         </button>
-                                    )}
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); setImageUpdateMode('replace'); fileInputRef.current?.click(); }}
-                                        className={`p-2.5 rounded-full transition-all shadow-lg ${isDarkMode ? 'bg-black/60 text-gray-300 hover:bg-black hover:text-orange-400' : 'bg-white/90 text-gray-700 hover:bg-white hover:text-orange-600'}`}
-                                        title="更换当前图片(本地)"
-                                    >
-                                        <Upload size={18} />
-                                    </button>
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); setImageUpdateMode('replace'); setShowImageUrlInput(true); }}
-                                        className={`p-2.5 rounded-full transition-all shadow-lg ${isDarkMode ? 'bg-black/60 text-gray-300 hover:bg-black hover:text-orange-400' : 'bg-white/90 text-gray-700 hover:bg-white hover:text-orange-600'}`}
-                                        title="更换当前图片(URL)"
-                                    >
-                                        <Globe size={18} />
-                                    </button>
-                                    <button 
-                                        onClick={(e) => { e.stopPropagation(); handleResetImage(); }}
-                                        className={`p-2.5 rounded-full transition-all shadow-lg ${isDarkMode ? 'bg-black/60 text-gray-300 hover:bg-black hover:text-orange-400' : 'bg-white/90 text-gray-700 hover:bg-white hover:text-orange-600'}`}
-                                        title="恢复默认图片"
-                                    >
-                                        <RotateCcw size={18} />
-                                    </button>
-                                    {currentImageUrl && (
                                         <button 
-                                            onClick={(e) => requestDeleteImage(e)}
-                                            className={`p-2.5 rounded-full transition-all shadow-lg ${isDarkMode ? 'bg-black/60 text-red-400 hover:bg-red-500 hover:text-white' : 'bg-white/90 text-red-500 hover:bg-red-500 hover:text-white'}`}
-                                            title="删除当前图片"
+                                            onClick={(e) => { e.stopPropagation(); setImageUpdateMode('replace'); setShowImageUrlInput(true); }}
+                                            className={`p-2.5 rounded-full transition-all shadow-lg ${isDarkMode ? 'bg-black/60 text-gray-300 hover:bg-black hover:text-orange-400' : 'bg-white/90 text-gray-700 hover:bg-white hover:text-orange-600'}`}
+                                            title="更换当前图片(URL)"
                                         >
-                                            <Trash2 size={18} />
+                                            <Globe size={18} />
                                         </button>
-                                    )}
-                                </div>
+                                        <button 
+                                            onClick={(e) => { e.stopPropagation(); handleResetImage(); }}
+                                            className={`p-2.5 rounded-full transition-all shadow-lg ${isDarkMode ? 'bg-black/60 text-gray-300 hover:bg-black hover:text-orange-400' : 'bg-white/90 text-gray-700 hover:bg-white hover:text-orange-600'}`}
+                                            title="恢复默认图片"
+                                        >
+                                            <RotateCcw size={18} />
+                                        </button>
+                                        {currentImageUrl && (
+                                            <button 
+                                                onClick={(e) => requestDeleteImage(e)}
+                                                className={`p-2.5 rounded-full transition-all shadow-lg ${isDarkMode ? 'bg-black/60 text-red-400 hover:bg-red-500 hover:text-white' : 'bg-white/90 text-red-500 hover:bg-red-500 hover:text-white'}`}
+                                                title="删除当前图片"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Navigation & Indicator for Edit Mode */}
                                 {allImages.length > 1 && (
@@ -775,8 +1014,8 @@ export const TemplatePreview = React.memo(({
                                 )}
                             </div>
                             
-                            {/* Add Image Button below the image box (only when image exists) */}
-                            {currentImageUrl && (
+                            {/* Add Image Button below the image box (only when image exists, hidden for video templates) */}
+                            {!isVideo && currentImageUrl && (
                                 <div className="mt-2 flex gap-2 justify-center">
                                     <button
                                         onClick={(e) => {
@@ -812,9 +1051,65 @@ export const TemplatePreview = React.memo(({
                                     </button>
                                 </div>
                             )}
+
+                            {/* Video Template: Source Assets displayed horizontally below video */}
+                            {isVideo && sources.length > 0 && (
+                                <div className="mt-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                    <label className={`text-[10px] font-black uppercase tracking-widest mb-2 block opacity-40 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                                        {language === 'cn' ? '参考素材 (SOURCE ASSETS)' : 'Source Assets'}
+                                    </label>
+                                    <div className="overflow-x-auto custom-scrollbar pb-2" style={{ scrollbarWidth: 'thin' }}>
+                                        <div className="flex gap-2 w-max">
+                                            {sources.map((src, sIdx) => (
+                                                <div 
+                                                    key={sIdx}
+                                                    className={`relative group/source rounded-lg overflow-hidden border-2 transition-all hover:scale-105 hover:shadow-lg flex-shrink-0 ${isDarkMode ? 'border-white/5 bg-white/5' : 'border-white bg-gray-50'}`}
+                                                    onClick={() => src.url && setSourceZoomedItem(src)}
+                                                >
+                                                    <div className="w-24 h-24 md:w-28 md:h-28 overflow-hidden flex items-center justify-center cursor-zoom-in">
+                                                        {src.type === 'video' ? (
+                                                            getVideoEmbedInfo(src.url)?.platform === 'video' ? (
+                                                                <video 
+                                                                    src={src.url} 
+                                                                    className="w-full h-full object-cover" 
+                                                                    muted 
+                                                                    playsInline
+                                                                    onMouseEnter={e => e.target.play()}
+                                                                    onMouseLeave={e => {
+                                                                        e.target.pause();
+                                                                        e.target.currentTime = 0;
+                                                                    }}
+                                                                />
+                                                            ) : (
+                                                                <div className="relative w-full h-full flex items-center justify-center bg-black/20">
+                                                                    <Play size={20} className="text-white/60" fill="currentColor" />
+                                                                </div>
+                                                            )
+                                                        ) : (
+                                                            <img 
+                                                                src={src.url} 
+                                                                alt={getLocalized(src.label, language) || `Source ${sIdx + 1}`}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        )}
+                                                    </div>
+                                                    {src.label && (
+                                                        <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm py-1 px-1.5 opacity-0 group-hover/source:opacity-100 transition-opacity">
+                                                            <p className="text-[9px] text-white font-bold truncate text-center">
+                                                                {getLocalized(src.label, language)}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
+                )}
 
                 {/* --- Rendered Content --- */}
                 <div id="final-prompt-content" className="md:px-4">

@@ -5,6 +5,10 @@
  * @property {string|Object} content - 模板内容，支持 markdown 和 {{variable}} 变量，支持双语对象 {cn: string, en: string} 或单语言字符串
  * @property {string} imageUrl - 预览缩略图 URL
  * @property {string[]} [imageUrls] - 多图预览数组
+ * @property {Object[]} [source] - 参考素材数组
+ * @property {string} source[].type - 素材类型 ('image' | 'video')
+ * @property {string} source[].url - 素材链接
+ * @property {Object} source[].label - 素材标签 {cn, en}
  * @property {Object.<string, string|Object>} selections - 默认选中的变量值 map，支持双语对象或字符串
  * @property {string[]} tags - 模板标签数组，可选值：建筑、人物、摄影、产品、图表、卡通、宠物、游戏、创意
  * @property {string|string[]} language - 模板语言，可选值：
@@ -36,13 +40,58 @@
 /**
  * 模板系统版本号，每次更新 templates.js 或 banks.js 时请更新此版本号
  */
-export const SYSTEM_DATA_VERSION = "0.8.8";
+export const SYSTEM_DATA_VERSION = "0.8.9";
 
 /**
  * 分享功能正式环境域名（扫码导入需使用公网可访问地址）
  * 留空则自动使用当前访问地址
  */
-export const PUBLIC_SHARE_URL = "https://aipromptfill.com"; 
+export const PUBLIC_SHARE_URL = "https://aipromptfill.com";
+
+export const TEMPLATE_SKETCH_REALITY_COMPARISON = {
+  cn: `### 手绘速写与实景对比
+
+刚刚画完速写，把画纸和实景放在一起拍摄，展示"看我画得多像"的效果。
+
+**核心场景：**
+一个人手持刚刚完成的速写作品，画纸旁边就是画中所描绘的真实场景。两者并排同框，形成强烈的视觉对比——左边是真实的建筑或场景，右边是手中的速写画作。画纸内容必须与实景完美对应，展现出高超的绘画技巧和观察力。
+
+**构图布局：**
+- 手绘画作：手持画纸，位于画面一侧（右侧或左侧均可），清晰展示完整的速写作品
+- 真实场景：画纸旁边就是画中描绘的真实场景，两者在同一画面中
+- 速写风格：采用 {{line_art_style}}，展现手绘的艺术质感
+- 分离展示：画纸和实景是两个独立的部分，不是融合叠加，而是物理分离的对比展示
+
+**视觉效果：**
+- 手绘部分：清晰的线条、流畅的笔触、完整的构图，展现速写的艺术魅力
+- 实景部分：真实的场景细节、自然的光影、丰富的色彩，与手绘形成呼应
+- 对比效果：观众可以清楚地看到速写与实景的相似度，感受到"画得真像"的赞叹
+- 整体氛围：自然真实的拍摄感，带有轻微的颗粒感和胶片质感，像是艺术家完成作品后的纪念照片
+
+**情感表达：**
+这不是融合特效，而是真实的对比展示——艺术家站在自己刚刚描绘的场景前，举起画纸与实景合影，展现对场景的观察和再现能力。`,
+  en: `### Sketch to Reality Comparison
+
+Just finished a sketch, placing the artwork alongside the real scene for a photo, showing "look how accurately I captured this" effect.
+
+**Core Scene:**
+A person holding a freshly completed sketch drawing, with the real scene depicted in the artwork visible right next to the paper. Both elements share the same frame, creating a strong visual comparison—the real building or scene on one side, the sketch drawing in hand on the other. The artwork must perfectly correspond to the actual scene, demonstrating exceptional drawing skill and observation.
+
+**Composition Layout:**
+- Hand-drawn artwork: Holding the sketch paper on one side of the frame (right or left), clearly displaying the complete sketch
+- Real scene: Immediately beside the paper is the actual scene depicted in the drawing, both within the same shot
+- Sketch style: Using {{line_art_style}}, showcasing the artistic quality of the hand-drawn work
+- Separated display: The drawing and real scene are two independent elements, not blended or overlapped, but physically separate for comparison
+
+**Visual Effects:**
+- Sketch portion: Clear lines, fluid brushstrokes, complete composition, showcasing the artistic charm of the sketch
+- Real scene portion: Authentic scene details, natural lighting, rich colors, echoing with the hand-drawn work
+- Comparison effect: Viewers can clearly see the similarity between sketch and reality, feeling the amazement of "it looks just like the real thing"
+- Overall atmosphere: Natural authentic photography feel, with subtle grain and film texture, like a commemorative photo after the artist completed their work
+
+**Emotional Expression:**
+This is not a fusion effect, but a genuine comparison display—the artist standing before the scene they just depicted, holding up their drawing alongside the actual view, demonstrating their power of observation and recreation.`
+};
 
 export const TEMPLATE_BRAND_CONCEPT_OBJECT = {
   cn: `### 品牌概念单品 (Brand Concept Object)
@@ -1840,8 +1889,58 @@ export const TEMPLATE_TAGS = [
   "宠物",
   "游戏",
   "创意",
-  "节日"
+  "节日",
+  "动作",
+  "影视",
+  "纪实",
+  "幻想",
+  "动画",
+  "武侠",
+  "现代",
+  "修仙"
 ];
+
+export const TEMPLATE_TAVERN_FIGHT_VIDEO = {
+  cn: `### 酒馆武打戏视频生成
+
+这是一段酒馆武打戏的开头和结尾的画面，请基于这两个场景，生成一段流畅的黑衣女子与几个刺客打斗的画面。
+
+**打斗风格：**
+{{fight_style}}
+
+**分镜与运镜要求：**
+- 运用到分镜和不同视角切换，让整个画面更有节奏感和电影感
+- {{camera_rhythm}}
+- 开场镜头从酒馆全景推进到人物特写
+- 打斗过程中穿插环境互动（桌椅翻飞、酒坛碎裂）
+- 结尾镜头从近景拉远，展现战斗后的酒馆全貌
+
+**画面氛围：**
+- 昏暗的酒馆内部，烛光摇曳，光影交错
+- 黑衣女子身手矫健，动作行云流水
+- 刺客从暗处突袭，营造紧张压迫感
+- 整体色调偏暗，关键动作瞬间用高光强调`,
+
+  en: `### Tavern Fight Scene Video Generation
+
+This depicts the opening and ending frames of a tavern fight scene. Based on these two scenes, generate a fluid sequence of a woman in black fighting several assassins.
+
+**Fight Style:**
+{{fight_style}}
+
+**Storyboard & Camera Requirements:**
+- Utilize storyboarding and different angle transitions to create rhythm and cinematic feel
+- {{camera_rhythm}}
+- Opening shot pushes from wide tavern establishing shot to character close-up
+- Intersperse environmental interactions during combat (tables flipping, wine jars shattering)
+- Ending shot pulls from close-up to wide, revealing the aftermath of the tavern battle
+
+**Visual Atmosphere:**
+- Dimly lit tavern interior, flickering candlelight, interplay of light and shadow
+- Woman in black moves with agility, fluid and seamless combat movements
+- Assassins strike from the shadows, creating tense and oppressive mood
+- Overall dark tonal palette, key action moments emphasized with highlights`
+};
 
 export const TEMPLATE_ANATOMY_FIGURE_STUDY = {
   cn: `### 解剖学人物画研究 (Anatomical Figure Drawing Study)
@@ -1900,6 +1999,92 @@ Geometric mannequin breakdown of human pose reference photo placed in top-left c
 - Reference photo: top-left corner, small scale
 - Geometric breakdown: fills remaining 80% of canvas
 - Clean professional layout like anatomy textbook`
+};
+
+export const TEMPLATE_3X3_STORYBOARD_VIDEO = {
+  cn: `使用故事板图片创建视频。
+
+将3x3故事板图片转换为视频。`,
+
+  en: `Create a video using storyboard images.
+
+Convert 3x3 storyboard images into video.`
+};
+
+export const TEMPLATE_CYBERPUNK_VEHICLE_CHASE = {
+  cn: `### 赛博朋克飞行器追逐视频
+
+**电影风格**：{{sci_fi_movie_style}}，高对比度霓虹光影，IMAX电影质感，史诗级配乐感。
+
+**视频时长**：10秒
+
+**分镜脚本**：
+
+[00:00-00:04] 镜头1：{{tracking_camera_shot}}
+画面：{{cyberpunk_city_scene}}，夜幕降临，还在下雨。
+动作：一辆{{futuristic_vehicle}}以极高速度在摩天大楼之间穿梭。
+环境细节（核心测试点）：数不清的巨大全息广告牌在闪烁，霓虹灯光极其复杂地反射在湿滑的玻璃幕墙和飞行器表面。飞行器尾部拉出长长的蓝色光流轨迹。
+
+[00:04-00:07] 镜头2：{{action_camera_shot}}
+动作：飞行器为了躲避障碍物，做了一个急转弯侧滑动作。
+细节：镜头非常贴近飞行器，捕捉每一个细节。
+
+[00:07-00:10] 镜头3：拉远镜头，展现飞行器消失在霓虹闪烁的城市深处。`,
+
+  en: `### Cyberpunk Vehicle Chase Video
+
+**Movie Style**: {{sci_fi_movie_style}}, high contrast neon lighting, IMAX movie quality, epic soundtrack feel.
+
+**Video Duration**: 10 seconds
+
+**Storyboard Script**:
+
+[00:00-00:04] Shot 1: {{tracking_camera_shot}}
+Scene: {{cyberpunk_city_scene}}, night has fallen, it's raining.
+Action: A {{futuristic_vehicle}} weaves through skyscrapers at extreme speed.
+Environmental Details (Core Test Point): Countless giant holographic ads flickering, neon lights reflecting complexly off wet glass curtain walls and the vehicle surface. The vehicle's tail creates long blue light trails.
+
+[00:04-00:07] Shot 2: {{action_camera_shot}}
+Action: The vehicle makes a sharp banked turn to dodge obstacles.
+Details: The camera is extremely close to the vehicle, capturing every detail.
+
+[00:07-00:10] Shot 3: Pull back to reveal the vehicle disappearing into the neon-lit depths of the city.`
+};
+
+export const TEMPLATE_RAINFOREST_WATERFALL_JET = {
+  cn: `### 雨林瀑布战机穿越视频
+
+一个电影感的视频序列，开场是 {{aerial_opening_shot}} 展示延伸至地平线的广阔 {{natural_environment}}，雾气在树冠中滚动，巨大的咆哮瀑布主导着中心景观，坠入阴影深处。
+
+镜头平滑过渡到 {{dynamic_tracking_shot}}，位置刚好在 {{military_aircraft}} 后方并略高于其上方，锁定其运动，因为它以极快的速度从高空向瀑布加速。
+
+速度感通过湍流空气扭曲、蒸汽轨迹、引擎热浪闪烁和微妙的相机震动来强调，飞机穿过云层。
+
+飞机快速下降，刚好掠过树梢上方，相机从后面紧密跟随，当飞机在参天大树和陡峭悬崖之间穿梭时，完美同步地倾斜和翻滚，动作精确而敏捷。
+
+阳光在飞机机身上闪过，叶子在下方模糊，雾气和喷雾向相机涌来，仿佛被飞机的尾流拉走。
+
+随着瀑布越来越近，咆哮声加剧，水向四面八方爆炸，水滴掠过跟踪相机。
+
+在最后时刻，飞机急剧向上拉起，完成完美的90度垂直爬升，相机直接留在后面，因为它穿过浓雾和辐射光。
+
+序列在飞机冲出瀑布上方时达到高潮，展现出另一侧宁静、发光的河流在原始、茂密的森林中蜿蜒的壮丽全景，平静而宏伟，与猛烈的爬升形成鲜明对比。`,
+
+  en: `A cinematic video sequence that opens with an {{aerial_opening_shot}} of a vast {{natural_environment}} stretching to the horizon, mist rolling through the canopy as a colossal roaring waterfall dominates the center of the landscape, plunging into shadowed depths.
+
+The camera then transitions smoothly into a {{dynamic_tracking_shot}} positioned just behind and slightly above a {{military_aircraft}}, locked onto its movement as it accelerates at extreme speed from high altitude toward the waterfall.
+
+The sense of velocity is emphasized by turbulent air distortion, vapor trails, engine heat shimmer, and subtle camera vibration as the jet cuts through clouds.
+
+The jet descends rapidly, skimming just above the treetops while the camera follows tightly from behind, banking and rolling in perfect sync as the aircraft weaves between towering trees and steep cliffs with precise, agile movements.
+
+Sunlight flashes across the jet's fuselage, leaves blur past beneath it, and mist and spray rush toward the camera as if being pulled along in the jet's wake.
+
+As the waterfall looms closer, the roar intensifies, water exploding outward on all sides while droplets streak past the tracking camera.
+
+In the final moment, the jet pulls sharply upward into a flawless 90 degree vertical climb, the camera staying directly behind as it rockets through dense mist and radiant light.
+
+The sequence culminates as the jet bursts above the waterfall, revealing a breathtaking wide vista of a serene, glowing river winding through untouched, lush forest on the other side, calm and majestic in striking contrast to the violent ascent.`
 };
 
 /**
@@ -2727,5 +2912,97 @@ export const INITIAL_TEMPLATES_CONFIG = [
     language: ["cn", "en"],
     bestModel: "Nano Banana Pro",
     baseImage: "recommend_base_image"
+  },
+  {
+    id: "tpl_sketch_reality_comparison",
+    name: { cn: "手绘速写与实景对比", en: "Sketch to Reality Comparison" },
+    content: TEMPLATE_SKETCH_REALITY_COMPARISON,
+    imageUrl: "https://s3.bmp.ovh/2026/02/06/hbxQtfml.jpg",
+    author: "tanshilong",
+    selections: {
+      "line_art_style": { cn: "铅笔素描风格", en: "Pencil sketch style" }
+    },
+    tags: ["建筑", "创意", "摄影"],
+    language: ["cn", "en"],
+    bestModel: "Nano Banana Pro",
+    baseImage: "recommend_base_image",
+    source: [
+      { type: "image", url: "https://s3.bmp.ovh/2026/02/08/QO5X6pga.png", label: { cn: "素材图", en: "Source Image" } }
+    ]
+  },
+  {
+    id: "tpl_tavern_fight_video",
+    name: { cn: "酒馆武打戏", en: "Tavern Fight Scene" },
+    type: "video",
+    content: TEMPLATE_TAVERN_FIGHT_VIDEO,
+    imageUrl: "https://s3.bmp.ovh/2026/02/08/5cHqPlDX.jpg",
+    videoUrl: "https://img.wjwj.top/2026/02/08/936f82f68088943ba501e1929a7b861c.mp4",
+    author: "YangGuang (@YangGuangAI)",
+    selections: {
+      "fight_style": { cn: "武侠飘逸风（轻功、剑气、衣袂飘飘）", en: "Wuxia elegant style (light kung fu, sword aura, flowing robes)" },
+      "camera_rhythm": { cn: "快速切换蒙太奇（多角度快速剪辑）", en: "Rapid montage cutting (multi-angle fast edits)" }
+    },
+    tags: ["动作", "影视", "人物", "武侠"],
+    language: ["cn", "en"],
+    bestModel: "Seedance 2.0",
+    baseImage: "recommend_base_image",
+    source: [
+      { type: "image", url: "https://s3.bmp.ovh/2026/02/08/5cHqPlDX.jpg", label: { cn: "开场素材", en: "Opening Frame" } },
+      { type: "image", url: "https://s3.bmp.ovh/2026/02/08/E8NQxzMI.jpg", label: { cn: "结尾素材", en: "Ending Frame" } }
+    ]
+  },
+  {
+    id: "tpl_3x3_storyboard_video",
+    name: { cn: "3x3故事板创建视频", en: "3x3 Storyboard Video Creation" },
+    type: "video",
+    content: TEMPLATE_3X3_STORYBOARD_VIDEO,
+    videoUrl: "https://img.wjwj.top/2026/02/08/c35f4592aa1a3eb23eb3d4e72fdb02ae.mov",
+    imageUrl: "https://s3.bmp.ovh/2026/02/08/mM0bxzAh.jpg",
+    author: "Mr.Iancu @Iancu_ai",
+    selections: {},
+    tags: ["创意", "设计"],
+    language: ["cn", "en"],
+    bestModel: "Seedance 2.0",
+    baseImage: "recommend_base_image",
+    source: [
+      { type: "image", url: "https://s3.bmp.ovh/2026/02/08/mM0bxzAh.jpg", label: { cn: "底图素材", en: "Base Image" } }
+    ]
+  },
+  {
+    id: "tpl_cyberpunk_vehicle_chase",
+    name: { cn: "赛博朋克飞行器追逐", en: "Cyberpunk Vehicle Chase" },
+    type: "video",
+    content: TEMPLATE_CYBERPUNK_VEHICLE_CHASE,
+    videoUrl: "https://img.wjwj.top/2026/02/08/85820eabd0f51ef1d215e5012cb2c8ff.mov",
+    author: "John @johnAGI168",
+    selections: {
+      sci_fi_movie_style: { cn: "赛博朋克美学（Cyberpunk Aesthetics）", en: "Cyberpunk Aesthetics" },
+      futuristic_vehicle: { cn: "流线型反重力飞行器（Anti-gravity Vehicle）", en: "Streamlined Anti-gravity Vehicle" },
+      cyberpunk_city_scene: { cn: "未来主义超级城市峡谷（Megacity Canyon）", en: "Futuristic Megacity Canyon" },
+      tracking_camera_shot: { cn: "极具纵深感的广角跟拍（Wide Angle Tracking Shot）", en: "Wide Angle Tracking Shot with Deep Depth" },
+      action_camera_shot: { cn: "紧张的驾驶舱视角（Cockpit View）", en: "Tense Cockpit View" }
+    },
+    tags: ["科幻", "动作", "影视", "游戏"],
+    language: ["cn", "en"],
+    bestModel: "Seedance 2.0",
+    baseImage: "no_base_image"
+  },
+  {
+    id: "tpl_rainforest_waterfall_jet",
+    name: { cn: "雨林瀑布战机穿越", en: "Rainforest Waterfall Jet" },
+    type: "video",
+    content: TEMPLATE_RAINFOREST_WATERFALL_JET,
+    videoUrl: "https://img.wjwj.top/2026/02/08/f60dcbb9a75748c8811de024ec2b5b12.mp4",
+    author: "Umesh @umesh_ai",
+    selections: {
+      natural_environment: { cn: "古代雨林（Ancient Rainforest）", en: "Ancient Rainforest" },
+      military_aircraft: { cn: "战斗机（Fighter Jet）", en: "Fighter Jet" },
+      aerial_opening_shot: { cn: "史诗超广角航拍（Epic Ultra Wide Aerial Shot）", en: "Epic Ultra Wide Aerial Shot" },
+      dynamic_tracking_shot: { cn: "第三人称紧密跟拍（Third-Person Tight Tracking）", en: "Third-Person Tight Tracking" }
+    },
+    tags: ["动作", "影视", "自然"],
+    language: ["cn", "en"],
+    bestModel: "Seedance 2.0",
+    baseImage: "no_base_image"
   }
 ];

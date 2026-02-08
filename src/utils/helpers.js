@@ -88,7 +88,11 @@ export const compressTemplate = (data, banks = null, categories = null) => {
       a: data.author || 'User',
       l: data.language || ['cn', 'en'],
       i: (typeof data.imageUrl === 'string' && data.imageUrl.startsWith('http')) ? data.imageUrl : "",
-      s: data.selections || {} // s for selections
+      s: data.selections || {}, // s for selections
+      // --- 新增视频模板相关字段 ---
+      ty: data.type || 'image',    // ty for type
+      vu: data.videoUrl || "",     // vu for videoUrl
+      src: data.source || []       // src for source
     };
 
     // 2. 如果提供了 banks，提取模板中使用的自定义词库
@@ -187,7 +191,11 @@ export const decompressTemplate = (compressedBase64) => {
       imageUrl: data.i || "",
       banks: data.b || null,
       categories: data.cg || null,
-      selections: data.s || data.selections || {}
+      selections: data.s || data.selections || {},
+      // --- 新增视频模板相关字段恢复 ---
+      type: data.ty || data.type || 'image',
+      videoUrl: data.vu || data.videoUrl || "",
+      source: data.src || data.source || []
     };
   } catch (error) {
     console.error('Decompression error:', error);
@@ -251,4 +259,69 @@ export const waitForImageLoad = (img, timeout = 6000) => {
     img.addEventListener('load', onLoad);
     img.addEventListener('error', onError);
   });
+};
+
+/**
+ * 自动识别并转换视频链接为嵌入地址 (B站, YouTube, X等)
+ * @param {string} url 原始链接
+ * @returns {Object|null} { embedUrl, platform, isEmbed: true } 或 null
+ */
+export const getVideoEmbedInfo = (url) => {
+  if (!url || typeof url !== 'string') return null;
+
+  // 1. YouTube
+  // https://www.youtube.com/watch?v=dQw4w9WgXcQ
+  // https://youtu.be/dQw4w9WgXcQ
+  const ytRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\s?]+)/;
+  const ytMatch = url.match(ytRegex);
+  if (ytMatch) {
+    return {
+      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}`,
+      platform: 'youtube',
+      isEmbed: true
+    };
+  }
+
+  // 2. Bilibili
+  // https://www.bilibili.com/video/BV1GJ411x7h7
+  // http://player.bilibili.com/player.html?bvid=BV1GJ411x7h7
+  const biliRegex = /(?:bilibili\.com\/video\/|player\.bilibili\.com\/player\.html\?bvid=)(BV[a-zA-Z0-9]+)/;
+  const biliMatch = url.match(biliRegex);
+  if (biliMatch) {
+    return {
+      // 增加 high_quality=1&danmaku=0 等参数优化预览体验
+      embedUrl: `//player.bilibili.com/player.html?bvid=${biliMatch[1]}&page=1&high_quality=1&danmaku=0`,
+      platform: 'bilibili',
+      isEmbed: true
+    };
+  }
+
+  // 3. X (Twitter)
+  // X 的嵌入比较特殊，通常是嵌入整个 Tweet
+  // https://x.com/username/status/123456789
+  // https://twitter.com/username/status/123456789
+  const xRegex = /(?:x\.com|twitter\.com)\/[a-zA-Z0-9_]+\/status\/(\d+)/;
+  const xMatch = url.match(xRegex);
+  if (xMatch) {
+    return {
+      // 使用 Twitter 官方的嵌入部件 URL (这种方式在 iframe 中可能受限，取决于平台策略)
+      // 备选方案是返回原始链接但在预览中提示使用 X 的嵌入
+      embedUrl: `https://platform.twitter.com/embed/Tweet.html?id=${xMatch[1]}`,
+      platform: 'x',
+      isEmbed: true
+    };
+  }
+
+  // 4. Direct Video Link (mp4, webm, ogg, etc.)
+  const videoExtRegex = /\.(mp4|webm|ogg|mov|m4v)(?:\?.*)?$/i;
+  if (videoExtRegex.test(url)) {
+    return {
+      embedUrl: url,
+      platform: 'video',
+      isEmbed: false // Direct video tag, not iframe
+    };
+  }
+
+  // 如果不是已知平台，返回 null
+  return null;
 };

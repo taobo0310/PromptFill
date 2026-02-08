@@ -9,14 +9,39 @@ import { X, ExternalLink, CheckCircle2, Globe, LayoutGrid } from 'lucide-react';
  * @param {boolean} props.isOpen - 是否打开弹窗
  * @param {Function} props.onClose - 关闭弹窗的回调
  * @param {string} props.bestModel - 当前模板的最佳匹配模型
+ * @param {string} props.templateType - 当前模板的类型 (image/video)
  * @param {boolean} props.isDarkMode - 是否暗色模式
  * @param {string} props.language - 当前语言
  */
-const CopySuccessModal = ({ isOpen, onClose, bestModel, isDarkMode, language }) => {
+const CopySuccessModal = ({ isOpen, onClose, bestModel, templateType = 'image', isDarkMode, language }) => {
   if (!isOpen) return null;
 
+  const isVideo = templateType === 'video';
+
   // 1. 官方平台列表
-  const officialSites = [
+  const officialSites = isVideo ? [
+    {
+      id: 'jimeng',
+      name: '即梦 (Jimeng)',
+      url: 'https://jimeng.jianying.com/ai-tool/home/',
+      description: { cn: '字节跳动 AI 视频', en: 'Bytedance AI Video' },
+      models: ['Seedance 2.0']
+    },
+    {
+      id: 'kling',
+      name: '可灵 (Kling AI)',
+      url: 'https://klingai.kuaishou.com/',
+      description: { cn: '快手专业级视频大模型', en: 'Kuaishou AI Video' },
+      models: ['Kling 3.0']
+    },
+    {
+      id: 'veo',
+      name: 'Veo 3 (Google)',
+      url: 'https://deepmind.google/technologies/veo/',
+      description: { cn: 'Google 视频生成模型', en: 'Google AI Video' },
+      models: ['Veo 3.1']
+    }
+  ] : [
     {
       id: 'nano',
       name: 'Nano Banana (Gemini)',
@@ -41,7 +66,22 @@ const CopySuccessModal = ({ isOpen, onClose, bestModel, isDarkMode, language }) 
   ];
 
   // 2. 第三方平台列表
-  const thirdPartySites = [
+  const thirdPartySites = isVideo ? [
+    {
+      id: 'luma',
+      name: 'Luma Dream Machine',
+      url: 'https://lumalabs.ai/dream-machine',
+      description: { cn: '电影级视频生成', en: 'Cinematic AI Video' },
+      models: []
+    },
+    {
+      id: 'runway',
+      name: 'Runway Gen-3',
+      url: 'https://runwayml.com/',
+      description: { cn: '专业 AI 视频创作工具', en: 'Pro AI Video Tools' },
+      models: []
+    }
+  ] : [
     {
       id: 'lovart',
       name: 'Lovart.ai',

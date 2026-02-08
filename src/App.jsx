@@ -26,9 +26,9 @@ import { useStickyState, useAsyncStickyState, useEditorHistory, useLinkageGroups
 
 // ====== 导入 UI 组件 ======
 import { Variable, VisualEditor, PremiumButton, EditorToolbar, Lightbox, TemplatePreview, TemplateEditor, TemplatesSidebar, BanksSidebar, InsertVariableModal, AddBankModal, DiscoveryView, MobileSettingsView, SettingsView, Sidebar, TagSidebar } from './components';
-import { ImagePreviewModal, AnimatedSlogan, MobileAnimatedSlogan } from './components/preview';
+import { ImagePreviewModal, SourceAssetModal, AnimatedSlogan, MobileAnimatedSlogan } from './components/preview';
 import { MobileBottomNav } from './components/mobile';
-import { ShareOptionsModal, CopySuccessModal, ImportTokenModal, ShareImportModal, CategoryManagerModal, ConfirmModal } from './components/modals';
+import { ShareOptionsModal, CopySuccessModal, ImportTokenModal, ShareImportModal, CategoryManagerModal, ConfirmModal, AddTemplateTypeModal } from './components/modals';
 import { DataUpdateNotice, AppUpdateNotice } from './components/notifications';
 
 
@@ -67,6 +67,7 @@ const App = () => {
 
   const [isSmartSplitLoading, setIsSmartSplitLoading] = useState(false);
   const [isSmartSplitConfirmOpen, setIsSmartSplitConfirmOpen] = useState(false);
+  const [isAddTemplateTypeModalOpen, setIsAddTemplateTypeModalOpen] = useState(false);
 
   // 包装 setActiveTemplateId，在智能拆分期间防止切换
   const handleSetActiveTemplateId = React.useCallback((id) => {
@@ -239,6 +240,7 @@ const App = () => {
   const [tempTemplateAuthor, setTempTemplateAuthor] = useState("");
   const [tempTemplateBestModel, setTempTemplateBestModel] = useState("");
   const [tempTemplateBaseImage, setTempTemplateBaseImage] = useState("");
+  const [tempVideoUrl, setTempVideoUrl] = useState("");
 
   // 监听 activeTemplate 变化，同步更新模板基础信息（用于已有模板的兼容性初始化）
   React.useEffect(() => {
@@ -256,9 +258,13 @@ const App = () => {
       } else {
         setTempTemplateBaseImage(activeTemplate.baseImage);
       }
+
+      // 同步视频URL
+      setTempVideoUrl(activeTemplate.videoUrl || "");
     }
   }, [activeTemplate?.id]);
   const [zoomedImage, setZoomedImage] = useState(null);
+  const [sourceZoomedItem, setSourceZoomedItem] = useState(null);
   // 移除这一行，将状态移入独立的 Modal 组件
   // const [modalMousePos, setModalMousePos] = useState({ x: 0, y: 0 });
   const [imageUrlInput, setImageUrlInput] = useState("");
@@ -277,6 +283,7 @@ const App = () => {
   // Template Tag Management State
   const [selectedTags, setSelectedTags] = useState("");
   const [selectedLibrary, setSelectedLibrary] = useState("all"); // all, official, personal
+  const [selectedType, setSelectedType] = useState("all"); // all, image, video
   const [searchQuery, setSearchQuery] = useState("");
   const [editingTemplateTags, setEditingTemplateTags] = useState(null); // {id, tags}
   const [isDiscoveryView, setDiscoveryView] = useState(true); // 首次加载默认显示发现（海报）视图
@@ -812,6 +819,8 @@ const App = () => {
     setTempTemplateBestModel,
     tempTemplateBaseImage,
     setTempTemplateBaseImage,
+    tempVideoUrl,
+    setTempVideoUrl,
     language,
     isMobileDevice,
     setMobileTab,
@@ -819,7 +828,7 @@ const App = () => {
     t
   );
   const {
-    handleAddTemplate,
+    handleAddTemplate: performAddTemplate,
     handleDuplicateTemplate,
     handleDeleteTemplate,
     handleResetTemplate,
@@ -827,6 +836,15 @@ const App = () => {
     handleStartEditing,
     handleStopEditing
   } = templateManagement;
+
+  const handleAddTemplate = React.useCallback(() => {
+    setIsAddTemplateTypeModalOpen(true);
+  }, []);
+
+  const onConfirmAddTemplate = React.useCallback((type) => {
+    performAddTemplate(type);
+    setIsAddTemplateTypeModalOpen(false);
+  }, [performAddTemplate]);
 
   const requestDeleteTemplate = React.useCallback((id, e) => {
     if (e) e.stopPropagation();
@@ -890,7 +908,8 @@ const App = () => {
         tempTemplateName, 
         tempTemplateAuthor,
         tempTemplateBestModel,
-        tempTemplateBaseImage
+        tempTemplateBaseImage,
+        tempVideoUrl
       );
     }
   };
@@ -1495,15 +1514,48 @@ const App = () => {
       const matchesTags = selectedTags === "" || 
         (t.tags && t.tags.includes(selectedTags));
       
+      // Type filter (image / video)
+      const matchesType = selectedType === "all" ||
+        (selectedType === "video" && t.type === "video") ||
+        (selectedType === "image" && t.type !== "video");
+
       // Library filter
       const isOfficial = INITIAL_TEMPLATES_CONFIG.some(cfg => cfg.id === t.id);
       const matchesLibrary = selectedLibrary === "all" || 
         (selectedLibrary === "official" && isOfficial) ||
         (selectedLibrary === "personal" && !isOfficial);
 
-      return matchesSearch && matchesTags && matchesLibrary;
+      return matchesSearch && matchesTags && matchesType && matchesLibrary;
     });
-  }, [discoveryTemplates, selectedTags, selectedLibrary, searchQuery]);
+  }, [discoveryTemplates, selectedTags, selectedType, selectedLibrary, searchQuery]);
+
+  // Compute available tags based on current type + library filters (ignoring tag filter itself)
+  const availableTags = React.useMemo(() => {
+    const tagsWithTemplates = new Set();
+    discoveryTemplates.forEach(t => {
+      // Apply type filter
+      const matchesType = selectedType === "all" ||
+        (selectedType === "video" && t.type === "video") ||
+        (selectedType === "image" && t.type !== "video");
+      // Apply library filter
+      const isOfficial = INITIAL_TEMPLATES_CONFIG.some(cfg => cfg.id === t.id);
+      const matchesLibrary = selectedLibrary === "all" || 
+        (selectedLibrary === "official" && isOfficial) ||
+        (selectedLibrary === "personal" && !isOfficial);
+      
+      if (matchesType && matchesLibrary && t.tags) {
+        t.tags.forEach(tag => tagsWithTemplates.add(tag));
+      }
+    });
+    return TEMPLATE_TAGS.filter(tag => tagsWithTemplates.has(tag));
+  }, [discoveryTemplates, selectedType, selectedLibrary]);
+
+  // Auto-reset selected tag when it becomes unavailable
+  React.useEffect(() => {
+    if (selectedTags !== "" && !availableTags.includes(selectedTags)) {
+      setSelectedTags("");
+    }
+  }, [availableTags, selectedTags]);
 
   const fileInputRef = useRef(null);
   
@@ -1512,16 +1564,29 @@ const App = () => {
           const file = e.target.files?.[0];
           if (!file) return;
           
+          const isImage = file.type.startsWith('image/');
+          const isVideo = file.type.startsWith('video/');
+
           // 验证文件类型
-          if (!file.type.startsWith('image/')) {
+          if (!isImage && !isVideo) {
               if (storageMode === 'browser') {
-                  alert('请选择图片文件');
+                  alert('请选择图片或视频文件');
               }
               return;
           }
+
+          // 容量控制：图片 10MB, 视频 50MB (Base64 会增加约 33% 体积)
+          const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+          const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
           
-          // 移除文件大小限制，让用户自由上传
-          // 数据保存现在通过 useAsyncStickyState 异步处理到 IndexedDB
+          if (isImage && file.size > MAX_IMAGE_SIZE) {
+              alert(`图片大小不能超过 10MB (当前: ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+              return;
+          }
+          if (isVideo && file.size > MAX_VIDEO_SIZE) {
+              alert(`视频大小不能超过 50MB (当前: ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+              return;
+          }
           
           const reader = new FileReader();
           
@@ -1533,6 +1598,18 @@ const App = () => {
                       if (imageUpdateMode === 'add') {
                         const newUrls = [...(t.imageUrls || [t.imageUrl]), reader.result];
                         return { ...t, imageUrls: newUrls, imageUrl: newUrls[0] };
+                      } else if (imageUpdateMode === 'add_source') {
+                        // 新增：向 source 数组中添加图片或视频素材
+                        const type = isVideo ? 'video' : 'image';
+                        const newSources = [...(t.source || []), { type, url: reader.result }];
+                        return { ...t, source: newSources };
+                      } else if (imageUpdateMode === 'replace_video_url') {
+                        // 新增：更新视频模板的视频成果链接
+                        setTempVideoUrl(reader.result);
+                        return { ...t, videoUrl: reader.result };
+                      } else if (imageUpdateMode === 'replace_cover') {
+                        // 更新视频模板的封面图
+                        return { ...t, imageUrl: reader.result };
                       } else {
                         // Replace current index
                         if (t.imageUrls && Array.isArray(t.imageUrls)) {
@@ -1583,12 +1660,14 @@ const App = () => {
       ));
   };
 
-  const handleDeleteImage = () => {
+  const handleDeleteImage = React.useCallback((index) => {
       setTemplates(prev => prev.map(t => {
           if (t.id !== activeTemplateId) return t;
           
+          const targetIndex = index !== undefined ? index : currentImageEditIndex;
+          
           if (t.imageUrls && Array.isArray(t.imageUrls) && t.imageUrls.length > 1) {
-              const newUrls = t.imageUrls.filter((_, idx) => idx !== currentImageEditIndex);
+              const newUrls = t.imageUrls.filter((_, idx) => idx !== targetIndex);
               return { 
                   ...t, 
                   imageUrls: newUrls, 
@@ -1600,18 +1679,19 @@ const App = () => {
           }
       }));
       setCurrentImageEditIndex(0);
-  };
+  }, [activeTemplateId, currentImageEditIndex, setTemplates, setCurrentImageEditIndex]);
 
-  const requestDeleteImage = React.useCallback((e) => {
+  const requestDeleteImage = React.useCallback((e, index) => {
     if (e) e.stopPropagation();
+    const targetIndex = index !== undefined ? index : currentImageEditIndex;
     openActionConfirm({
       title: language === 'cn' ? '删除图片' : 'Delete Image',
       message: language === 'cn' ? '确定要删除这张图片吗？' : 'Delete this image?',
       confirmText: language === 'cn' ? '删除' : 'Delete',
       cancelText: language === 'cn' ? '取消' : 'Cancel',
-      onConfirm: handleDeleteImage,
+      onConfirm: () => handleDeleteImage(targetIndex),
     });
-  }, [language, handleDeleteImage, openActionConfirm]);
+  }, [language, handleDeleteImage, openActionConfirm, currentImageEditIndex]);
 
   const handleSetImageUrl = () => {
       if (!imageUrlInput.trim()) return;
@@ -1619,9 +1699,23 @@ const App = () => {
       setTemplates(prev => prev.map(t => {
           if (t.id !== activeTemplateId) return t;
           
-          if (imageUpdateMode === 'add') {
+          if (imageUpdateMode === 'replace_video_url') {
+            // 更新视频模板的视频成果链接
+            setTempVideoUrl(imageUrlInput);
+            return { ...t, videoUrl: imageUrlInput };
+          } else if (imageUpdateMode === 'replace_cover') {
+            // 更新视频模板的封面图
+            return { ...t, imageUrl: imageUrlInput };
+          } else if (imageUpdateMode === 'add') {
             const newUrls = [...(t.imageUrls || [t.imageUrl]), imageUrlInput];
             return { ...t, imageUrls: newUrls, imageUrl: newUrls[0] };
+          } else if (imageUpdateMode === 'add_source') {
+            // 向 source 数组中添加 URL 素材，自动判断视频/图片类型
+            const isVideoUrl = /\.(mp4|webm|ogg|mov|m4v)(\?.*)?$/i.test(imageUrlInput) ||
+              /youtube\.com|youtu\.be|bilibili\.com|player\.bilibili\.com/i.test(imageUrlInput);
+            const type = isVideoUrl ? 'video' : 'image';
+            const newSources = [...(t.source || []), { type, url: imageUrlInput }];
+            return { ...t, source: newSources };
           } else {
             // Replace current index
             if (t.imageUrls && Array.isArray(t.imageUrls)) {
@@ -2838,8 +2932,11 @@ const App = () => {
             setSelectedTags={setSelectedTags}
             selectedLibrary={selectedLibrary}
             setSelectedLibrary={setSelectedLibrary}
+            selectedType={selectedType}
+            setSelectedType={setSelectedType}
             handleAddTemplate={handleAddTemplate}
             TEMPLATE_TAGS={TEMPLATE_TAGS}
+            availableTags={availableTags}
           />
         ) : (
           <div className="flex-1 flex gap-2 lg:gap-4 overflow-hidden">
@@ -2847,10 +2944,13 @@ const App = () => {
             {!isMobileDevice && (
               <TagSidebar
                 TEMPLATE_TAGS={TEMPLATE_TAGS}
+                availableTags={availableTags}
                 selectedTags={selectedTags}
                 selectedLibrary={selectedLibrary}
+                selectedType={selectedType}
                 setSelectedTags={setSelectedTags}
                 setSelectedLibrary={setSelectedLibrary}
+                setSelectedType={setSelectedType}
                 isDarkMode={isDarkMode}
                 language={language}
               />
@@ -2899,6 +2999,7 @@ const App = () => {
             <TemplateEditor
               // ===== 模板数据 =====
               activeTemplate={activeTemplate}
+              setSourceZoomedItem={setSourceZoomedItem}
               banks={banks}
               defaults={defaults}
               categories={categories}
@@ -2949,6 +3050,8 @@ const App = () => {
               setTempTemplateBestModel={setTempTemplateBestModel}
               tempTemplateBaseImage={tempTemplateBaseImage}
               setTempTemplateBaseImage={setTempTemplateBaseImage}
+              tempVideoUrl={tempVideoUrl}
+              setTempVideoUrl={setTempVideoUrl}
 
               // ===== 标签编辑 =====
               handleUpdateTemplateTags={handleUpdateTemplateTags}
@@ -2990,46 +3093,70 @@ const App = () => {
               setIsBanksDrawerOpen={setIsBanksDrawerOpen}
             />
 
-            {/* Image URL Input Modal - 保持在 TemplateEditor 外部 */}
+            {/* Image/Video URL Input Modal - 保持在 TemplateEditor 外部 */}
             {showImageUrlInput && (
               <div
-                className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+                className="fixed inset-0 z-[1000] bg-black/40 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300"
                 onClick={() => { setShowImageUrlInput(false); setImageUrlInput(""); }}
               >
                 <div
-                  className={`w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border ${isDarkMode ? 'bg-[#1C1917] border-white/10' : 'bg-white border-gray-100'}`}
+                  className={`w-full max-w-sm rounded-[32px] shadow-2xl overflow-hidden border animate-scale-up ${isDarkMode ? 'bg-[#242120] border-white/5' : 'bg-white border-gray-100'}`}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className={`p-6 flex items-center gap-2 ${isDarkMode ? 'bg-white/[0.02]' : 'bg-gray-50/60'}`}>
-                    <Globe size={20} className={`${isDarkMode ? 'text-orange-400' : 'text-blue-500'}`} />
-                    <h3 className={`text-lg font-black tracking-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                      {t('image_url')}
+                  <div className="p-8 relative">
+                    <button
+                      onClick={() => { setShowImageUrlInput(false); setImageUrlInput(""); }}
+                      className={`absolute top-6 right-6 p-2 rounded-full transition-all ${isDarkMode ? 'text-gray-500 hover:text-white hover:bg-white/5' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'}`}
+                    >
+                      <X size={20} />
+                    </button>
+
+                    <h3 className={`text-xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                      {activeTemplate?.type === 'video' 
+                        ? (language === 'cn' ? '视频链接' : 'Video URL')
+                        : (language === 'cn' ? '图片链接' : 'Image URL')}
                     </h3>
-                  </div>
-                  <div className="p-6">
-                    <input
-                      autoFocus
-                      type="text"
-                      value={imageUrlInput}
-                      onChange={(e) => setImageUrlInput(e.target.value)}
-                      placeholder={t('image_url_placeholder')}
-                      className={`w-full px-4 py-3 text-sm rounded-lg mb-4 focus:outline-none focus:ring-2 ${isDarkMode ? 'bg-white/5 border border-white/10 text-gray-100 placeholder:text-gray-500 focus:ring-orange-500/40' : 'border border-gray-300 text-gray-800 focus:ring-blue-500 focus:border-blue-500'}`}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSetImageUrl()}
-                    />
-                    <div className="flex gap-3">
-                      <button
+                    <p className={`text-xs font-bold mb-6 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      {activeTemplate?.type === 'video'
+                        ? (language === 'cn' ? '请输入视频的在线地址' : 'Please enter the online video URL')
+                        : (language === 'cn' ? '请输入图片的在线地址' : 'Please enter the online image URL')}
+                    </p>
+                    
+                    <div className="space-y-6">
+                      <div className={`premium-search-container group ${isDarkMode ? 'dark' : 'light'} !rounded-2xl`}>
+                        <input
+                          autoFocus
+                          type="text"
+                          value={imageUrlInput}
+                          onChange={(e) => setImageUrlInput(e.target.value)}
+                          placeholder={activeTemplate?.type === 'video'
+                            ? (language === 'cn' ? '输入视频 URL 地址...' : 'Enter video URL...')
+                            : t('image_url_placeholder')}
+                          className={`
+                            w-full px-5 py-4 text-xs font-mono outline-none bg-transparent
+                            ${isDarkMode ? 'text-gray-300 placeholder:text-gray-700' : 'text-gray-700 placeholder:text-gray-400'}
+                          `}
+                          onKeyDown={(e) => e.key === 'Enter' && handleSetImageUrl()}
+                        />
+                      </div>
+
+                      <PremiumButton
                         onClick={handleSetImageUrl}
                         disabled={!imageUrlInput.trim()}
-                        className={`flex-1 px-4 py-2.5 text-sm font-bold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${isDarkMode ? 'bg-orange-500 hover:bg-orange-600 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}
+                        isDarkMode={isDarkMode}
+                        className="w-full size-lg"
+                        icon={Check}
+                        justify="start"
                       >
-                        {t('use_url')}
-                      </button>
-                      <button
-                        onClick={() => { setShowImageUrlInput(false); setImageUrlInput(""); }}
-                        className={`flex-1 px-4 py-2.5 text-sm font-bold rounded-lg transition-all ${isDarkMode ? 'bg-white/10 hover:bg-white/20 text-gray-200' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}
-                      >
-                        {t('cancel')}
-                      </button>
+                        <div className="flex flex-col items-start ml-2 text-left">
+                          <span className="text-sm font-black">
+                            {t('use_url')}
+                          </span>
+                          <span className={`text-[10px] font-bold opacity-50`}>
+                            {language === 'cn' ? '确认并应用此链接' : 'Confirm and apply this link'}
+                          </span>
+                        </div>
+                      </PremiumButton>
                     </div>
                   </div>
                 </div>
@@ -3108,6 +3235,7 @@ const App = () => {
         isOpen={isCopySuccessModalOpen}
         onClose={() => setIsCopySuccessModalOpen(false)}
         bestModel={activeTemplate?.bestModel}
+        templateType={activeTemplate?.type}
         isDarkMode={isDarkMode}
         language={language}
       />
@@ -3163,6 +3291,14 @@ const App = () => {
         confirmText={language === 'cn' ? '删除' : 'Delete'}
         cancelText={language === 'cn' ? '取消' : 'Cancel'}
         isDarkMode={isDarkMode}
+      />
+
+      <AddTemplateTypeModal
+        isOpen={isAddTemplateTypeModalOpen}
+        onClose={() => setIsAddTemplateTypeModalOpen(false)}
+        onSelect={onConfirmAddTemplate}
+        isDarkMode={isDarkMode}
+        language={language}
       />
 
       {/* --- Action Confirm Modal --- */}
@@ -3359,6 +3495,13 @@ const App = () => {
         isDarkMode={isDarkMode}
       />
 
+      {/* --- Source Asset Global Modal --- */}
+      <SourceAssetModal 
+        item={sourceZoomedItem} 
+        onClose={() => setSourceZoomedItem(null)} 
+        language={language} 
+      />
+
       {/* --- 更新通知组件 --- */}
       <DataUpdateNotice
         isOpen={showDataUpdateNotice}
@@ -3409,7 +3552,7 @@ const App = () => {
         ref={fileInputRef} 
         onChange={handleUploadImage} 
         className="hidden" 
-        accept="image/*" 
+        accept="image/*,video/*" 
       />
     </div>
   );

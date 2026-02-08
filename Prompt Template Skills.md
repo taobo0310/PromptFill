@@ -1,10 +1,10 @@
 # 模版创作技能指南 (Prompt Template Skills Guide)
 
-**版本**: 2.0
+**版本**: 3.0
 **作者**: Tanshilong
-**更新日期**: 2026-01-31
+**更新日期**: 2026-02-08
 
-本指南旨在规范 Prompt Fill 项目中模版的创作流程,确保模版的高质量、可维护性以及多语言支持。
+本指南旨在规范 Prompt Fill 项目中模版的创作流程,确保模版的高质量、可维护性以及多语言支持。本项目已全面支持**图片模板**和**视频模板**两种类型。
 
 ---
 
@@ -159,13 +159,21 @@ A {{character_type}} designed by {{art_style}} master,{{outfit}} style.
     // ... 其他变量的默认值
   },
   tags: ["游戏", "人物"],
-  language: ["cn", "en"]
+  language: ["cn", "en"],
+  source: [
+    { type: "image", url: "https://example.com/ref.jpg", label: { cn: "参考图", en: "Reference" } },
+    { type: "video", url: "https://example.com/ref.mp4", label: { cn: "视频参考", en: "Video Ref" } }
+  ]
 }
 ```
 
 **步骤3: 设置默认值**
 
 在 `selections` 中为每个变量指定合理的初始值。
+
+**步骤4: 分配标签**
+
+参考下方 2.5 标签体系，为模板选择合适的标签。注意"视频"和"图片"是**类型（Type）**，不是标签。
 
 ---
 
@@ -181,19 +189,110 @@ A {{character_type}} designed by {{art_style}} master,{{outfit}} style.
 
 ---
 
-### 2.3 模型与底图建议 (Model & Base Image Suggestion)
+### 2.3 模板类型 (Template Types)
+
+项目支持两种模板类型，通过 `type` 字段区分：
+
+**图片模板（默认）**:
+- 不设置 `type` 字段，或 `type` 不为 `"video"`
+- 使用 `imageUrl` 作为预览图
+- 可使用 `imageUrls` 数组支持多图预览
+
+**视频模板**:
+- **必须设置** `type: "video"`
+- 使用 `videoUrl` 存放视频链接（主要预览内容）
+- `imageUrl` 作为视频封面图（poster）
+- 参考素材图片放在 `source` 数组中
+
+```javascript
+// 视频模板示例
+{
+  id: "tpl_tavern_fight_video",
+  type: "video",                    // 必须！标记为视频模板
+  videoUrl: "https://example.com/video.mp4",  // 视频链接
+  imageUrl: "https://example.com/poster.jpg", // 封面图
+  source: [
+    { type: "image", url: "...", label: { cn: "开场素材", en: "Opening Frame" } },
+    { type: "image", url: "...", label: { cn: "结尾素材", en: "Ending Frame" } }
+  ],
+  // ... 其他字段
+}
+```
+
+---
+
+### 2.4 模型与底图建议 (Model & Base Image Suggestion)
 
 模版应提供最佳匹配模型的推荐以及是否需要自备底图的指导:
 
-**最佳匹配模型 (`bestModel`)**:
+**图片模板推荐模型 (`bestModel`)**:
 - `"Nano Banana Pro"`
 - `"Midjourney V7"`
 - `"Zimage"`
+
+**视频模板推荐模型 (`bestModel`)**:
+- `"Seedance 2.0"`
+- `"Veo 3.1"`
+- `"Kling 3.0"`
 
 **自备底图 (`baseImage`)**:
 - `"no_base_image"` - 无需底图
 - `"recommend_base_image"` - 自备底图
 - `"optional_base_image"` - 按需准备
+
+---
+
+### 2.5 标签体系 (Tag System)
+
+项目采用**三层筛选体系**：素材库（Library）→ 类型（Type）→ 标签（Tags）。
+
+#### 类型（Type）与标签（Tags）的区别
+
+- **类型 Type**: "图片"和"视频"是**类型**,不是标签。通过 `type` 字段区分,在侧栏中作为独立的筛选层级。
+- **标签 Tags**: 描述模板内容主题的分类标记,图片和视频模板共用同一套标签体系。
+
+**⚠️ 关键规则**: 模板的 `tags` 数组中**不要**包含"视频"或"图片"标签，类型筛选由 `type` 字段自动处理。
+
+#### 标签列表
+
+**通用标签**（图片和视频模板均可使用）:
+
+| 标签 | 英文 | 适用场景 |
+|------|------|----------|
+| 建筑 | Architecture | 建筑、空间设计 |
+| 人物 | Portrait | 人像、角色 |
+| 摄影 | Photography | 摄影作品 |
+| 产品 | Product | 产品展示 |
+| 图表 | Diagram | 图表、数据可视化 |
+| 卡通 | Cartoon | 卡通、动漫风格 |
+| 宠物 | Pets | 动物、宠物 |
+| 游戏 | Gaming | 游戏场景、角色 |
+| 创意 | Creative | 创意、概念艺术 |
+| 动作 | Action | 动作场景、打斗 |
+| 影视 | Cinematic | 影视级画面 |
+
+**视频偏向标签**（更常用于视频模板，但不限制使用）:
+
+| 标签 | 英文 | 适用场景 |
+|------|------|----------|
+| 纪实 | Documentary | 纪录片风格 |
+| 幻想 | Fantasy | 奇幻、魔法场景 |
+| 动画 | Animation | 动画风格 |
+| 武侠 | Wuxia | 武侠、中国功夫 |
+| 现代 | Modern | 现代都市题材 |
+| 修仙 | Xianxia | 修仙、仙侠题材 |
+
+#### 动态标签筛选
+
+- 当用户切换"类型"（图片/视频）筛选时，侧栏中**仅显示有对应模板的标签**
+- 如果某标签在当前类型下没有任何模板，该标签会被自动隐藏
+- 标签的显示/隐藏由 `App.jsx` 中 `availableTags` 计算逻辑控制
+
+#### 新增标签
+
+新标签需在以下位置添加:
+1. `src/data/templates.js` → `TEMPLATE_TAGS` 数组
+2. `src/constants/styles.js` → `TAG_STYLES`（颜色样式）和 `TAG_LABELS`（中英文标签名）
 
 ---
 
@@ -228,11 +327,50 @@ A {{character_type}} designed by {{art_style}} master,{{outfit}} style.
 
 ---
 
-### 3.3 图片预览
+### 3.3 预览媒体 (Preview Media)
 
+**图片模板**:
 - 确保 `imageUrl` 指向清晰、具有代表性的预览图
 - 如果支持多图展示,请使用 `imageUrls` 数组
 - 临时占位符: `https://placehold.co/600x400/png?text=Template+Name`
+
+**视频模板**:
+- `videoUrl` 为主要预览内容（mp4 链接），**不是** `imageUrl`
+- `imageUrl` 用于视频封面图（poster），当视频未加载时显示
+- UI 会根据 `type: "video"` 自动切换为视频播放器预览
+- 视频模板在编辑器预览和发现页模态中均有专门的大尺寸视频播放器布局
+
+---
+
+### 3.4 参考素材 (Source Assets)
+
+本项目支持在模板中展示参考素材:
+
+- **字段**: `source` (数组)
+- **素材对象结构**:
+  - `type`: 素材类型,可选 `"image"` 或 `"video"`
+  - `url`: 素材的 URL 地址
+  - `label`: 素材的显示名称(双语对象)
+- **用途**: 用于展示生成提示词时的参考素材,如 ControlNet 的参考图、风格参考视频等
+
+**图片模板**: `source` 中可包含图片和视频素材
+
+**视频模板**: 视频链接放在 `videoUrl` 字段中,`source` 中仅放参考图片（如开场帧、结尾帧等素材图）。视频模板的 `source` 素材在 UI 中横向排布于视频预览下方,支持左右滚动。
+
+**示例代码**:
+```javascript
+// 图片模板的 source
+source: [
+  { type: "image", url: "https://example.com/ref.jpg", label: { cn: "参考图", en: "Reference" } },
+  { type: "video", url: "https://example.com/demo.mp4", label: { cn: "动态参考", en: "Motion Ref" } }
+]
+
+// 视频模板的 source（视频在 videoUrl，这里只放素材图）
+source: [
+  { type: "image", url: "https://example.com/frame1.jpg", label: { cn: "开场素材", en: "Opening Frame" } },
+  { type: "image", url: "https://example.com/frame2.jpg", label: { cn: "结尾素材", en: "Ending Frame" } }
+]
+```
 
 ---
 
@@ -265,6 +403,7 @@ export const INITIAL_BANKS = {
 
 ### 模版配置 (`src/data/templates.js`)
 
+**图片模板示例**:
 ```javascript
 export const TEMPLATE_EXAMPLE = {
   cn: `### 示例标题\n这是一个使用了 {{my_variable}} 的模版。`,
@@ -284,6 +423,36 @@ export const TEMPLATE_EXAMPLE = {
   language: ["cn", "en"],
   bestModel: "Nano Banana Pro",
   baseImage: "optional_base_image"
+}
+```
+
+**视频模板示例**:
+```javascript
+export const TEMPLATE_TAVERN_FIGHT_VIDEO = {
+  cn: `### 酒馆武打戏\n这是一段使用 {{fight_style}} 风格拍摄的视频...`,
+  en: `### Tavern Fight Scene\nA video shot in {{fight_style}} style...`
+};
+
+// 在 INITIAL_TEMPLATES_CONFIG 中
+{
+  id: "tpl_tavern_fight_video",
+  name: { cn: "酒馆武打戏", en: "Tavern Fight Scene" },
+  type: "video",                    // ⭐ 必须！标记为视频模板
+  content: TEMPLATE_TAVERN_FIGHT_VIDEO,
+  videoUrl: "https://example.com/video.mp4",  // ⭐ 视频链接（主预览）
+  imageUrl: "https://example.com/poster.jpg", // 封面图
+  author: "YangGuang (@YangGuangAI)",
+  selections: {
+    fight_style: { cn: "拳拳到肉", en: "Hard-hitting" }
+  },
+  tags: ["动作", "影视", "人物", "武侠"],    // ⭐ 不包含"视频"标签
+  language: ["cn", "en"],
+  bestModel: "Seedance 2.0",        // 视频生成模型
+  baseImage: "recommend_base_image",
+  source: [                          // ⭐ 仅参考图，视频在 videoUrl
+    { type: "image", url: "https://example.com/frame1.jpg", label: { cn: "开场素材", en: "Opening Frame" } },
+    { type: "image", url: "https://example.com/frame2.jpg", label: { cn: "结尾素材", en: "Ending Frame" } }
+  ]
 }
 ```
 

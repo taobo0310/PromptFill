@@ -1,5 +1,5 @@
 {
-  "version": "0.8.7",
+  "version": "0.8.9",
   "config": [
     {
       "id": "tpl_default",
@@ -2030,7 +2030,7 @@
         "cn": "### 解剖学人物画研究 (Anatomical Figure Drawing Study)\n\n几何人体模型分解，将人体姿态参考照片放置在左上角（小缩略图），主区域展示结构解剖素描。\n\n**几何构造 (GEOMETRIC CONSTRUCTION):**\n- 四肢（手臂、腿部、颈部）使用圆柱体形式\n- 躯干、骨盆、脚部使用盒子/楔形形状\n- 肩部、肘部、膝盖、手腕处使用球形关节\n- 头部使用倒角立方体，并标示面部平面\n- {{anatomy_teaching_style}}\n\n**风格规格 (STYLE SPECIFICATIONS):**\n- {{construction_line_color}}\n- 松弛的手势线条，可见构造笔触\n- 半透明的重叠形式展示深度\n- 地平线标记在人物地面平面上\n- 如果姿势复杂，展示同一姿势的多个观察角度\n\n**艺术方法 (ARTISTIC APPROACH):**\n- 人物画研究美学\n- 教育插图质量\n- 白色/米白色背景\n- 手绘铅笔素描外观\n\n**构图 (COMPOSITION):**\n- 参考照片：左上角，小比例\n- 几何分解：填充画布剩余的 80%\n- 干净的专业布局，类似解剖学教科书",
         "en": "### Anatomical Figure Drawing Study\n\nGeometric mannequin breakdown of human pose reference photo placed in top-left corner (small thumbnail), main area shows structural anatomy sketch.\n\n**GEOMETRIC CONSTRUCTION:**\n- Cylindrical forms for limbs (arms, legs, neck)\n- Box/wedge shapes for torso, pelvis, feet\n- Spherical joints at shoulders, elbows, knees, wrists\n- Beveled cube for head with facial plane indication\n- {{anatomy_teaching_style}}\n\n**STYLE SPECIFICATIONS:**\n- {{construction_line_color}}\n- Loose gestural linework with visible construction strokes\n- Semi-transparent overlapping forms showing depth\n- Horizon line marked at figure's ground plane\n- Multiple viewing angles of same pose if complex\n\n**ARTISTIC APPROACH:**\n- Figure drawing study aesthetic\n- Educational illustration quality\n- White/off-white background\n- Hand-drawn pencil sketch appearance\n\n**COMPOSITION:**\n- Reference photo: top-left corner, small scale\n- Geometric breakdown: fills remaining 80% of canvas\n- Clean professional layout like anatomy textbook"
       },
-      "imageUrl": "https://placehold.co/600x400/png?text=Anatomy+Figure+Study",
+      "imageUrl": "https://s3.bmp.ovh/2026/02/02/rcAAVlSX.jpg",
       "author": "Vigo Zhao (@VigoCreativeAI)",
       "selections": {
         "anatomy_teaching_style": {
@@ -2053,6 +2053,101 @@
       ],
       "bestModel": "Nano Banana Pro",
       "baseImage": "recommend_base_image"
+    },
+    {
+      "id": "tpl_sketch_reality_comparison",
+      "name": {
+        "cn": "手绘速写与实景对比",
+        "en": "Sketch to Reality Comparison"
+      },
+      "content": {
+        "cn": "### 手绘速写与实景对比\n\n刚刚画完速写，把画纸和实景放在一起拍摄，展示\"看我画得多像\"的效果。\n\n**核心场景：**\n一个人手持刚刚完成的速写作品，画纸旁边就是画中所描绘的真实场景。两者并排同框，形成强烈的视觉对比——左边是真实的建筑或场景，右边是手中的速写画作。画纸内容必须与实景完美对应，展现出高超的绘画技巧和观察力。\n\n**构图布局：**\n- 手绘画作：手持画纸，位于画面一侧（右侧或左侧均可），清晰展示完整的速写作品\n- 真实场景：画纸旁边就是画中描绘的真实场景，两者在同一画面中\n- 速写风格：采用 {{line_art_style}}，展现手绘的艺术质感\n- 分离展示：画纸和实景是两个独立的部分，不是融合叠加，而是物理分离的对比展示\n\n**视觉效果：**\n- 手绘部分：清晰的线条、流畅的笔触、完整的构图，展现速写的艺术魅力\n- 实景部分：真实的场景细节、自然的光影、丰富的色彩，与手绘形成呼应\n- 对比效果：观众可以清楚地看到速写与实景的相似度，感受到\"画得真像\"的赞叹\n- 整体氛围：自然真实的拍摄感，带有轻微的颗粒感和胶片质感，像是艺术家完成作品后的纪念照片\n\n**情感表达：**\n这不是融合特效，而是真实的对比展示——艺术家站在自己刚刚描绘的场景前，举起画纸与实景合影，展现对场景的观察和再现能力。",
+        "en": "### Sketch to Reality Comparison\n\nJust finished a sketch, placing the artwork alongside the real scene for a photo, showing \"look how accurately I captured this\" effect.\n\n**Core Scene:**\nA person holding a freshly completed sketch drawing, with the real scene depicted in the artwork visible right next to the paper. Both elements share the same frame, creating a strong visual comparison—the real building or scene on one side, the sketch drawing in hand on the other. The artwork must perfectly correspond to the actual scene, demonstrating exceptional drawing skill and observation.\n\n**Composition Layout:**\n- Hand-drawn artwork: Holding the sketch paper on one side of the frame (right or left), clearly displaying the complete sketch\n- Real scene: Immediately beside the paper is the actual scene depicted in the drawing, both within the same shot\n- Sketch style: Using {{line_art_style}}, showcasing the artistic quality of the hand-drawn work\n- Separated display: The drawing and real scene are two independent elements, not blended or overlapped, but physically separate for comparison\n\n**Visual Effects:**\n- Sketch portion: Clear lines, fluid brushstrokes, complete composition, showcasing the artistic charm of the sketch\n- Real scene portion: Authentic scene details, natural lighting, rich colors, echoing with the hand-drawn work\n- Comparison effect: Viewers can clearly see the similarity between sketch and reality, feeling the amazement of \"it looks just like the real thing\"\n- Overall atmosphere: Natural authentic photography feel, with subtle grain and film texture, like a commemorative photo after the artist completed their work\n\n**Emotional Expression:**\nThis is not a fusion effect, but a genuine comparison display—the artist standing before the scene they just depicted, holding up their drawing alongside the actual view, demonstrating their power of observation and recreation."
+      },
+      "imageUrl": "https://s3.bmp.ovh/2026/02/06/hbxQtfml.jpg",
+      "author": "tanshilong",
+      "selections": {
+        "line_art_style": {
+          "cn": "铅笔素描风格",
+          "en": "Pencil sketch style"
+        }
+      },
+      "tags": [
+        "建筑",
+        "创意",
+        "摄影"
+      ],
+      "language": [
+        "cn",
+        "en"
+      ],
+      "bestModel": "Nano Banana Pro",
+      "baseImage": "recommend_base_image",
+      "source": [
+        {
+          "type": "image",
+          "url": "https://s3.bmp.ovh/2026/02/08/QO5X6pga.png",
+          "label": {
+            "cn": "素材图",
+            "en": "Source Image"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tpl_tavern_fight_video",
+      "name": {
+        "cn": "酒馆武打戏",
+        "en": "Tavern Fight Scene"
+      },
+      "type": "video",
+      "content": {
+        "cn": "### 酒馆武打戏视频生成\n\n这是一段酒馆武打戏的开头和结尾的画面，请基于这两个场景，生成一段流畅的黑衣女子与几个刺客打斗的画面。\n\n**打斗风格：**\n{{fight_style}}\n\n**分镜与运镜要求：**\n- 运用到分镜和不同视角切换，让整个画面更有节奏感和电影感\n- {{camera_rhythm}}\n- 开场镜头从酒馆全景推进到人物特写\n- 打斗过程中穿插环境互动（桌椅翻飞、酒坛碎裂）\n- 结尾镜头从近景拉远，展现战斗后的酒馆全貌\n\n**画面氛围：**\n- 昏暗的酒馆内部，烛光摇曳，光影交错\n- 黑衣女子身手矫健，动作行云流水\n- 刺客从暗处突袭，营造紧张压迫感\n- 整体色调偏暗，关键动作瞬间用高光强调",
+        "en": "### Tavern Fight Scene Video Generation\n\nThis depicts the opening and ending frames of a tavern fight scene. Based on these two scenes, generate a fluid sequence of a woman in black fighting several assassins.\n\n**Fight Style:**\n{{fight_style}}\n\n**Storyboard & Camera Requirements:**\n- Utilize storyboarding and different angle transitions to create rhythm and cinematic feel\n- {{camera_rhythm}}\n- Opening shot pushes from wide tavern establishing shot to character close-up\n- Intersperse environmental interactions during combat (tables flipping, wine jars shattering)\n- Ending shot pulls from close-up to wide, revealing the aftermath of the tavern battle\n\n**Visual Atmosphere:**\n- Dimly lit tavern interior, flickering candlelight, interplay of light and shadow\n- Woman in black moves with agility, fluid and seamless combat movements\n- Assassins strike from the shadows, creating tense and oppressive mood\n- Overall dark tonal palette, key action moments emphasized with highlights"
+      },
+      "imageUrl": "https://s3.bmp.ovh/2026/02/08/5cHqPlDX.jpg",
+      "videoUrl": "https://img.wjwj.top/2026/02/08/936f82f68088943ba501e1929a7b861c.mp4",
+      "author": "YangGuang (@YangGuangAI)",
+      "selections": {
+        "fight_style": {
+          "cn": "武侠飘逸风（轻功、剑气、衣袂飘飘）",
+          "en": "Wuxia elegant style (light kung fu, sword aura, flowing robes)"
+        },
+        "camera_rhythm": {
+          "cn": "快速切换蒙太奇（多角度快速剪辑）",
+          "en": "Rapid montage cutting (multi-angle fast edits)"
+        }
+      },
+      "tags": [
+        "动作",
+        "影视",
+        "人物",
+        "武侠"
+      ],
+      "language": [
+        "cn",
+        "en"
+      ],
+      "bestModel": "Seedance 2.0",
+      "baseImage": "recommend_base_image",
+      "source": [
+        {
+          "type": "image",
+          "url": "https://s3.bmp.ovh/2026/02/08/5cHqPlDX.jpg",
+          "label": {
+            "cn": "开场素材",
+            "en": "Opening Frame"
+          }
+        },
+        {
+          "type": "image",
+          "url": "https://s3.bmp.ovh/2026/02/08/E8NQxzMI.jpg",
+          "label": {
+            "cn": "结尾素材",
+            "en": "Ending Frame"
+          }
+        }
+      ]
     }
   ]
 }

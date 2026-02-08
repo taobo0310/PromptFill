@@ -1,14 +1,171 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
-  ImageIcon, ArrowUpRight, Search, Plus
+  ImageIcon, ArrowUpRight, Search, Plus, Play
 } from 'lucide-react';
 import { getLocalized } from '../utils/helpers';
 import { Sidebar } from './Sidebar';
 import { TagSidebar } from './TagSidebar';
-import { FireworkEffect } from './FireworkEffect';
 import { TemplateCarousel } from './TemplateCarousel';
-import { FEATURE_FLAGS } from '../constants/featureFlags';
 import { TAG_LABELS } from '../constants/styles';
+
+/**
+ * FuCharacter 组件 - 可交互的福字
+ * hover 时轻微晃动，点击旋转180度并显示祝福语
+ */
+const FuCharacter = React.memo(({ isDarkMode }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+
+  const handleClick = useCallback(() => {
+    setIsFlipped(prev => !prev);
+  }, []);
+
+  return (
+    <div className="flex items-center justify-center select-none mt-2">
+      {/* 左联 - 竖排"福到心顺" */}
+      <div
+        className="flex flex-col items-center justify-center gap-0.5 flex-shrink-0"
+        style={{
+          transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+          opacity: isFlipped ? 1 : 0,
+          width: isFlipped ? '28px' : '0px',
+          marginRight: isFlipped ? '6px' : '0px',
+          overflow: 'hidden',
+        }}
+      >
+        {'福到心顺'.split('').map((char, i) => (
+          <span
+            key={i}
+            className={`text-[13px] font-bold leading-snug ${isDarkMode ? 'text-amber-400/90' : 'text-amber-700/80'}`}
+            style={{
+              transition: `all 0.35s cubic-bezier(0.4, 0, 0.2, 1) ${0.15 + i * 0.07}s`,
+              opacity: isFlipped ? 1 : 0,
+              transform: isFlipped ? 'translateY(0) scale(1)' : 'translateY(-4px) scale(0.8)',
+            }}
+          >
+            {char}
+          </span>
+        ))}
+      </div>
+
+      {/* 福字 */}
+      <div
+        className="relative cursor-pointer flex-shrink-0"
+        onClick={handleClick}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      >
+        <img
+          src="/FU.svg"
+          alt="福"
+          className="w-16 h-16 lg:w-[72px] lg:h-[72px] drop-shadow-lg"
+          draggable={false}
+          style={{
+            transition: 'transform 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+            transform: isFlipped ? 'rotate(180deg)' : 'rotate(0deg)',
+            animation: isHovering && !isFlipped ? 'fu-wobble 0.6s ease-in-out infinite' : 'none',
+          }}
+        />
+      </div>
+
+      {/* 右联 - 竖排"马到功成" */}
+      <div
+        className="flex flex-col items-center justify-center gap-0.5 flex-shrink-0"
+        style={{
+          transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+          opacity: isFlipped ? 1 : 0,
+          width: isFlipped ? '28px' : '0px',
+          marginLeft: isFlipped ? '6px' : '0px',
+          overflow: 'hidden',
+        }}
+      >
+        {'马到功成'.split('').map((char, i) => (
+          <span
+            key={i}
+            className={`text-[13px] font-bold leading-snug ${isDarkMode ? 'text-amber-400/90' : 'text-amber-700/80'}`}
+            style={{
+              transition: `all 0.35s cubic-bezier(0.4, 0, 0.2, 1) ${0.15 + i * 0.07}s`,
+              opacity: isFlipped ? 1 : 0,
+              transform: isFlipped ? 'translateY(0) scale(1)' : 'translateY(-4px) scale(0.8)',
+            }}
+          >
+            {char}
+          </span>
+        ))}
+      </div>
+
+      <style>{`
+        @keyframes fu-wobble {
+          0%, 100% { transform: rotate(0deg); }
+          15% { transform: rotate(4deg); }
+          30% { transform: rotate(-4deg); }
+          45% { transform: rotate(3deg); }
+          60% { transform: rotate(-2deg); }
+          75% { transform: rotate(1deg); }
+          90% { transform: rotate(-1deg); }
+        }
+      `}</style>
+    </div>
+  );
+});
+FuCharacter.displayName = 'FuCharacter';
+
+/**
+ * VideoCard 组件 - 瀑布流中的视频卡片
+ * 默认显示封面图（或视频首帧），hover 时自动播放视频
+ */
+const VideoCard = React.memo(({ videoUrl, imageUrl, alt }) => {
+  const [isHovered, setIsHovered] = useState(false);
+  const videoRef = useRef(null);
+
+  const handleMouseEnter = useCallback(() => {
+    setIsHovered(true);
+    const vid = videoRef.current;
+    if (vid) {
+      vid.currentTime = 0;
+      vid.play().catch(() => {});
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setIsHovered(false);
+    const vid = videoRef.current;
+    if (vid) {
+      vid.pause();
+      vid.currentTime = 0;
+    }
+  }, []);
+
+  return (
+    <div
+      className="relative w-full"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      {/* 封面图层 - hover 时淡出 */}
+      {imageUrl && (
+        <img
+          src={imageUrl}
+          alt={alt}
+          className={`w-full h-auto object-cover transition-opacity duration-300 ${isHovered ? 'opacity-0' : 'opacity-100'}`}
+          referrerPolicy="no-referrer"
+          loading="lazy"
+        />
+      )}
+      {/* 视频层 - 始终存在，hover 时显示 */}
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        className={`w-full h-auto object-cover ${imageUrl ? 'absolute inset-0 w-full h-full' : ''} transition-opacity duration-300 ${imageUrl && !isHovered ? 'opacity-0' : 'opacity-100'}`}
+        muted
+        playsInline
+        preload="metadata"
+        loop
+      />
+    </div>
+  );
+});
+VideoCard.displayName = 'VideoCard';
 
 /**
  * DiscoveryView 组件 - 瀑布流展示所有模板
@@ -48,12 +205,14 @@ export const DiscoveryView = React.memo(({
     setSelectedTags,
     selectedLibrary,
     setSelectedLibrary,
+    selectedType,
+    setSelectedType,
     handleAddTemplate,
-    TEMPLATE_TAGS
+    TEMPLATE_TAGS,
+    availableTags
   }) => {
     const [columnCount, setColumnCount] = useState(1);
     const [columnGap, setColumnGap] = useState(20); // Default to gap-5 (20px)
-    const fireworkRef = useRef(null);
   
     useEffect(() => {
       const getColumnInfo = () => {
@@ -106,9 +265,30 @@ export const DiscoveryView = React.memo(({
               WebkitMaskImage: 'linear-gradient(to bottom, black 0%, black 50%, transparent 100%)'
             }}
           />
-          {/* 内容区域 - 标签选项 */}
+          {/* 内容区域 - 类型 + 标签选项 */}
           <div className="relative pt-safe pointer-events-auto overflow-hidden">
-            <div className="flex overflow-x-auto no-scrollbar px-6 gap-6 scroll-smooth h-14 items-center">
+            {/* 类型切换行 */}
+            <div className="flex px-6 gap-4 h-10 items-center">
+              {[
+                { id: 'all', cn: '全部', en: 'All' },
+                { id: 'image', cn: '图片', en: 'Image' },
+                { id: 'video', cn: '视频', en: 'Video' }
+              ].map(type => (
+                <button
+                  key={type.id}
+                  onClick={() => setSelectedType(type.id)}
+                  className={`flex-shrink-0 text-[13px] font-bold px-3 py-1 rounded-full transition-all duration-300 ${
+                    selectedType === type.id
+                      ? (isDarkMode ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-500/10 text-orange-600')
+                      : (isDarkMode ? 'text-white/50 hover:text-white/70 bg-white/5' : 'text-black/40 hover:text-black/60 bg-black/5')
+                  }`}
+                >
+                  {language === 'cn' ? type.cn : type.en}
+                </button>
+              ))}
+            </div>
+            {/* 标签选项行 */}
+            <div className="flex overflow-x-auto no-scrollbar px-6 gap-6 scroll-smooth h-12 items-center">
               <button
                 onClick={() => setSelectedTags("")}
                 className={`flex-shrink-0 text-[15px] font-bold transition-all duration-300 relative ${
@@ -122,7 +302,7 @@ export const DiscoveryView = React.memo(({
                   <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-orange-500 rounded-full"></span>
                 )}
               </button>
-              {TEMPLATE_TAGS.map(tag => (
+              {(availableTags || TEMPLATE_TAGS).map(tag => (
                 <button
                   key={tag}
                   onClick={() => setSelectedTags(tag)}
@@ -161,6 +341,8 @@ export const DiscoveryView = React.memo(({
                 onClick={() => {
                   if (t_item.imageUrl) {
                     setZoomedImage(t_item.imageUrl);
+                  } else if (t_item.type === 'video' && t_item.videoUrl) {
+                    setZoomedImage(t_item.videoUrl);
                   } else {
                     setActiveTemplateId(t_item.id);
                     setDiscoveryView(false);
@@ -177,11 +359,27 @@ export const DiscoveryView = React.memo(({
                       referrerPolicy="no-referrer"
                       loading="lazy"
                     />
+                  ) : t_item.type === 'video' && t_item.videoUrl ? (
+                    <video
+                      src={t_item.videoUrl}
+                      className="w-full h-auto block"
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
                   ) : (
                     <div className="w-full aspect-[4/3] flex items-center justify-center text-gray-300">
                       <ImageIcon size={48} strokeWidth={1} />
                     </div>
                   )}
+                  
+                  {/* Video Indicator */}
+                  {t_item.type === 'video' && (
+                    <div className="absolute top-2 right-2 z-10 bg-black/50 backdrop-blur-md rounded-full p-1.5 text-white shadow-lg border border-white/10">
+                      <Play size={12} fill="currentColor" />
+                    </div>
+                  )}
+
                   {/* Title Overlay */}
                   <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2 pt-6 rounded-b-lg">
                     <h3 className="text-white font-bold text-[10px] truncate">{getLocalized(t_item.name, language)}</h3>
@@ -202,10 +400,13 @@ export const DiscoveryView = React.memo(({
       {/* Middle Side: Categories Sidebar (Desktop Only) */}
       <TagSidebar
         TEMPLATE_TAGS={TEMPLATE_TAGS}
+        availableTags={availableTags}
         selectedTags={selectedTags}
         selectedLibrary={selectedLibrary}
+        selectedType={selectedType}
         setSelectedTags={setSelectedTags}
         setSelectedLibrary={setSelectedLibrary}
+        setSelectedType={setSelectedType}
         isDarkMode={isDarkMode}
         language={language}
       />
@@ -232,6 +433,10 @@ export const DiscoveryView = React.memo(({
                   <div className="w-full scale-90 lg:scale-95 xl:scale-100 origin-center lg:origin-left">
                     <AnimatedSlogan isActive={isSloganActive} language={language} isDarkMode={isDarkMode} />
                   </div>
+                  {/* 福字交互区域 - 在 Slogan 下方居中 */}
+                  <div className="w-full flex justify-center lg:justify-center">
+                    <FuCharacter isDarkMode={isDarkMode} />
+                  </div>
               </header>
 
               {/* Right Side: Waterfall Grid */}
@@ -253,6 +458,8 @@ export const DiscoveryView = React.memo(({
                                               onClick={() => {
                                                   if (t_item.imageUrl) {
                                                       setZoomedImage(t_item.imageUrl);
+                                                  } else if (t_item.type === 'video' && t_item.videoUrl) {
+                                                      setZoomedImage(t_item.videoUrl);
                                                   } else {
                                                       setActiveTemplateId(t_item.id);
                                                       setDiscoveryView(false);
@@ -261,7 +468,13 @@ export const DiscoveryView = React.memo(({
                                               className={`cursor-pointer group transition-shadow duration-300 relative overflow-hidden rounded-xl isolate border-2 hover:shadow-[0_0_15px_rgba(251,146,60,0.35)] will-change-transform ${isDarkMode ? 'border-white/10' : 'border-white'}`}
                                           >
                                               <div className={`relative w-full overflow-hidden rounded-lg ${isDarkMode ? 'bg-[#2A2726]' : 'bg-gray-100'}`} style={{ transform: 'translateZ(0)' }}>
-                                                  {t_item.imageUrl ? (
+                                                  {t_item.type === 'video' && t_item.videoUrl ? (
+                                                      <VideoCard
+                                                          videoUrl={t_item.videoUrl}
+                                                          imageUrl={t_item.imageUrl}
+                                                          alt={getLocalized(t_item.name, language)}
+                                                      />
+                                                  ) : t_item.imageUrl ? (
                                                       <img 
                                                           src={t_item.imageUrl} 
                                                           alt={getLocalized(t_item.name, language)} 
@@ -273,6 +486,13 @@ export const DiscoveryView = React.memo(({
                                                   <div className="w-full aspect-[3/4] bg-gray-100/5 flex items-center justify-center text-gray-300">
                                                       <ImageIcon size={32} />
                                                   </div>
+                                              )}
+                                              
+                                              {/* Video Indicator - Desktop */}
+                                              {t_item.type === 'video' && (
+                                                <div className="absolute top-3 right-3 z-10 bg-black/40 backdrop-blur-md rounded-full p-2 text-white shadow-xl border border-white/10 opacity-80 group-hover:opacity-100 transition-opacity">
+                                                  <Play size={14} fill="currentColor" />
+                                                </div>
                                               )}
                                               
                                               {/* Hover Overlay: Bottom Glass Mask */}
@@ -295,19 +515,7 @@ export const DiscoveryView = React.memo(({
 
           {/* Bottom Bar: Trigger on Left, Author Info on Right */}
           <footer className="mt-auto flex items-center justify-between px-8 py-6 relative z-20">
-              {/* New Year Firework Trigger (Desktop/Mobile unified position) */}
-              {FEATURE_FLAGS.ENABLE_NEW_YEAR_FIREWORKS ? (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fireworkRef.current?.start();
-                  }}
-                  className="transition-all duration-300 transform hover:scale-110 active:scale-95 outline-none"
-                  title="新年烟花秀"
-                >
-                  <img src="/2026.png" alt="2026 烟花秀" className="h-10 md:h-12 w-auto" />
-                </button>
-              ) : <div />}
+              <div />
 
               <div className="flex flex-col items-end gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
                   <div className={`flex items-center gap-3 text-[11px] font-medium px-4 py-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>
@@ -330,13 +538,6 @@ export const DiscoveryView = React.memo(({
               </div>
           </footer>
       </div>
-      <FireworkEffect 
-        ref={fireworkRef} 
-        onStart={() => {
-          // 播放烟花时自动切换到暗夜模式
-          if (setThemeMode) setThemeMode('dark');
-        }}
-      />
     </main>
   );
 });
